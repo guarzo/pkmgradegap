@@ -12,7 +12,17 @@
       "Bash(go run:*)",
       "Bash(GOSUMDB= go build -o pkmgradegap ./cmd/pokeprice)",
       "Bash(unset GOPROXY)",
-      "Bash(GOSUMDB= go build -o pkmgradegap ./cmd/pkmgradegap)"
+      "Bash(GOSUMDB= go build -o pkmgradegap ./cmd/pkmgradegap)",
+      "Bash(tree:*)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --list-sets)",
+      "Bash(go test:*)",
+      "Bash(find:*)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-pop --top 3 --min-raw-usd 1)",
+      "Bash(EBAY_APP_ID=\"test\" ./debug-ebay)",
+      "Bash(EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --with-ebay --ebay-max 3 --top 1)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-ebay --ebay-max 3 --top 3)",
+      "Bash(EBAY_APP_ID=\"mock\" ./debug-ebay)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-ebay --ebay-max 2 --top 3)"
     ],
     "deny": [],
     "ask": []

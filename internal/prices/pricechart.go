@@ -7,16 +7,22 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
+	"github.com/guarzo/pkmgradegap/internal/cache"
 	"github.com/guarzo/pkmgradegap/internal/model"
 )
 
 type PriceCharting struct {
 	token string
+	cache *cache.Cache
 }
 
-func NewPriceCharting(token string) *PriceCharting {
-	return &PriceCharting{token: token}
+func NewPriceCharting(token string, c *cache.Cache) *PriceCharting {
+	return &PriceCharting{
+		token: token,
+		cache: c,
+	}
 }
 
 func (p *PriceCharting) Available() bool {
@@ -35,12 +41,29 @@ type PCMatch struct {
 }
 
 func (p *PriceCharting) LookupCard(setName string, c model.Card) (*PCMatch, error) {
+	// Try cache first
+	if p.cache != nil {
+		var match PCMatch
+		key := cache.PriceChartingKey(setName, c.Name, c.Number)
+		if found, _ := p.cache.Get(key, &match); found {
+			return &match, nil
+		}
+	}
+
 	// Heuristic query; you will likely refine this (promos, alt arts, RH).
 	// Examples:
 	//   "Pokemon Surging Sparks Pikachu #238"
 	//   "Pokemon Vivid Voltage Charizard #25"
 	q := fmt.Sprintf("pokemon %s %s #%s", setName, c.Name, c.Number)
-	return p.lookupByQuery(q)
+	match, err := p.lookupByQuery(q)
+
+	// Cache the result if successful
+	if err == nil && match != nil && p.cache != nil {
+		key := cache.PriceChartingKey(setName, c.Name, c.Number)
+		_ = p.cache.Put(key, match, 2*time.Hour)
+	}
+
+	return match, err
 }
 
 func (p *PriceCharting) lookupByQuery(q string) (*PCMatch, error) {

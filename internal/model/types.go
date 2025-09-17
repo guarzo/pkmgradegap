@@ -1,8 +1,11 @@
 package model
 
+import "time"
+
 type Set struct {
-	ID   string
-	Name string
+	ID          string
+	Name        string
+	ReleaseDate string // Format: "YYYY-MM-DD" or "YYYY/MM/DD"
 }
 
 // Minimal card representation we need for pricing/analysis.
@@ -43,4 +46,12 @@ type CardmarketBlock struct {
 		ReverseHoloAvg7     *float64 `json:"reverseHoloAvg7,omitempty"`
 		ReverseHoloAvg30    *float64 `json:"reverseHoloAvg30,omitempty"`
 	} `json:"prices"`
+}
+
+type PSAPopulation struct {
+	TotalGraded int
+	PSA10       int
+	PSA9        int
+	PSA8        int
+	LastUpdated time.Time
 }
