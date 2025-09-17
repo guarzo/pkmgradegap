@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/guarzo/pkmgradegap/internal/report"
 )
 
 // AlertReport contains alert data and metadata for export
@@ -85,7 +87,8 @@ func (ar *AlertReport) ExportToCSV(filename string) error {
 
 	// Write metadata as key-value pairs
 	for i := 0; i < len(metadataHeaders); i += 2 {
-		if err := writer.Write([]string{metadataHeaders[i], metadataHeaders[i+1]}); err != nil {
+		row := report.EscapeCSVRow([]string{metadataHeaders[i], metadataHeaders[i+1]})
+		if err := writer.Write(row); err != nil {
 			return fmt.Errorf("writing metadata: %w", err)
 		}
 	}
@@ -112,7 +115,8 @@ func (ar *AlertReport) ExportToCSV(filename string) error {
 		"Additional Details",
 	}
 
-	if err := writer.Write(headers); err != nil {
+	safeHeaders := report.EscapeCSVRow(headers)
+	if err := writer.Write(safeHeaders); err != nil {
 		return fmt.Errorf("writing headers: %w", err)
 	}
 
@@ -180,7 +184,8 @@ func (ar *AlertReport) ExportToCSV(filename string) error {
 		}
 		row = append(row, additionalDetails)
 
-		if err := writer.Write(row); err != nil {
+		safeRow := report.EscapeCSVRow(row)
+		if err := writer.Write(safeRow); err != nil {
 			return fmt.Errorf("writing alert row: %w", err)
 		}
 	}

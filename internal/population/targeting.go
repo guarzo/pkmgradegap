@@ -1,7 +1,6 @@
 package population
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -268,7 +267,7 @@ func (t *TargetingEngine) isBasicEnergy(cardName string) bool {
 
 func (t *TargetingEngine) isCommonTrainer(card model.Card) bool {
 	if !strings.Contains(strings.ToLower(card.Name), "trainer") &&
-		!strings.Contains(strings.ToLower(card.Type), "trainer") {
+		!strings.Contains(strings.ToLower(card.Rarity), "trainer") {
 		return false
 	}
 

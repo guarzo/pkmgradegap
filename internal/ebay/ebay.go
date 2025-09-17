@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -147,12 +149,15 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 			}
 
 			listings = append(listings, listing)
-
-			// Break if we have enough listings
-			if len(listings) >= max {
-				break
-			}
 		}
+	}
+
+	// Sort to prefer Buy It Now over auctions
+	c.sortByListingType(listings)
+
+	// Return only the requested number of listings
+	if len(listings) > max {
+		listings = listings[:max]
 	}
 
 	return listings, nil
@@ -226,19 +231,22 @@ func (c *Client) parseItem(item struct {
 	return listing, nil
 }
 
-func (c *Client) isGradedCard(title string) bool {
-	lower := strings.ToLower(title)
-	gradedTerms := []string{
-		"psa", "bgs", "cgc", "ace", "graded", "slab", "slabbed",
-		"authenticated", "gem mint", "pristine", "black label",
-		"perfect 10", "mint 9", "nm-mt 8",
-	}
+var gradedPattern = regexp.MustCompile(`(?i)\b(psa|bgs|cgc|sgc|beckett|graded|slab|slabbed|authenticated|gem\s+mint|pristine|black\s+label|perfect\s+10|mint\s+9|nm-mt\s+8)\b`)
 
-	for _, term := range gradedTerms {
-		if strings.Contains(lower, term) {
+func (c *Client) isGradedCard(title string) bool {
+	return gradedPattern.MatchString(title)
+}
+
+func (c *Client) sortByListingType(listings []Listing) {
+	sort.Slice(listings, func(i, j int) bool {
+		// Prefer Buy It Now listings over auctions
+		if listings[i].BuyItNow && !listings[j].BuyItNow {
 			return true
 		}
-	}
-
-	return false
+		if !listings[i].BuyItNow && listings[j].BuyItNow {
+			return false
+		}
+		// If both are the same type, maintain original order
+		return false
+	})
 }

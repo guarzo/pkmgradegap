@@ -37,7 +37,10 @@
       "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1 --verbose)",
       "Bash(xargs basename:*)",
       "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --analysis alerts --help)",
-      "Bash(PRICECHARTING_TOKEN=\"test\" POKEMON_PRICE_TRACKER_API_KEY=\"test\" ./pkmgradegap --set \"Surging Sparks\" --with-pop --with-sales --top 1 --verbose)"
+      "Bash(PRICECHARTING_TOKEN=\"test\" POKEMON_PRICE_TRACKER_API_KEY=\"test\" ./pkmgradegap --set \"Surging Sparks\" --with-pop --with-sales --top 1 --verbose)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --list-sets --quiet)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1 --quiet)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --with-pop --top 1)"
     ],
     "deny": [],
     "ask": []

@@ -39,7 +39,7 @@ type SubmissionBatch struct {
 // SubmissionCard represents a card to be submitted for grading
 type SubmissionCard struct {
 	Card          model.Card
-	RawPriceUSD   float64
+	RawUSD   float64
 	PSA10Price    float64
 	PSA9Price     float64
 	ExpectedGrade float64
@@ -87,7 +87,7 @@ func (bo *BulkOptimizer) OptimizeSubmission(cards []SubmissionCard) []Submission
 		// Add card to batch
 		batch.Cards = append(batch.Cards, card)
 		batch.TotalValue += card.PSA10Price
-		batch.TotalCost += card.RawPriceUSD + serviceLevel.CostPerCard
+		batch.TotalCost += card.RawUSD + serviceLevel.CostPerCard
 	}
 
 	// Calculate profitability for each batch

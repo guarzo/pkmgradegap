@@ -56,7 +56,7 @@ func (ma *MarketAnalyzer) AnalyzeCard(cardKey string) *TimingRecommendation {
 
 	for _, snapshot := range ma.snapshots {
 		if card, exists := snapshot.Cards[cardKey]; exists {
-			rawPrices = append(rawPrices, card.RawPriceUSD)
+			rawPrices = append(rawPrices, card.RawUSD)
 			psa10Prices = append(psa10Prices, card.PSA10Price)
 			timestamps = append(timestamps, snapshot.Timestamp)
 		}
@@ -78,7 +78,7 @@ func (ma *MarketAnalyzer) AnalyzeCard(cardKey string) *TimingRecommendation {
 	// Generate recommendation
 	rec := &TimingRecommendation{
 		Card:         latest.Card,
-		CurrentPrice: latest.RawPriceUSD,
+		CurrentPrice: latest.RawUSD,
 		Timestamp:    time.Now(),
 	}
 
@@ -126,7 +126,7 @@ func (ma *MarketAnalyzer) AnalyzeMarket(gradingCost, shippingCost, feePct float6
 		if rec != nil && rec.Action != "HOLD" {
 			// Calculate ROI for context
 			card := latest.Cards[cardKey]
-			roi := calculateROI(card.RawPriceUSD, card.PSA10Price, gradingCost, shippingCost, feePct)
+			roi := calculateROI(card.RawUSD, card.PSA10Price, gradingCost, shippingCost, feePct)
 
 			// Only include if profitable
 			if roi > 20 && rec.Action == "BUY" {

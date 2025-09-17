@@ -129,8 +129,8 @@ func (ae *AlertEngine) CheckNewOpportunities(old, new *Snapshot, gradingCost, sh
 		}
 
 		// Calculate old and new ROI
-		oldROI := calculateROI(oldCard.RawPriceUSD, oldCard.PSA10Price, gradingCost, shippingCost, feePct)
-		newROI := calculateROI(newCard.RawPriceUSD, newCard.PSA10Price, gradingCost, shippingCost, feePct)
+		oldROI := calculateROI(oldCard.RawUSD, oldCard.PSA10Price, gradingCost, shippingCost, feePct)
+		newROI := calculateROI(newCard.RawUSD, newCard.PSA10Price, gradingCost, shippingCost, feePct)
 
 		// Check if card crossed into profitable territory
 		if oldROI < ae.config.OpportunityThresholdROI && newROI >= ae.config.OpportunityThresholdROI {
@@ -143,13 +143,13 @@ func (ae *AlertEngine) CheckNewOpportunities(old, new *Snapshot, gradingCost, sh
 				Details: map[string]interface{}{
 					"old_roi":     oldROI,
 					"new_roi":     newROI,
-					"raw_price":   newCard.RawPriceUSD,
+					"raw_price":   newCard.RawUSD,
 					"psa10_price": newCard.PSA10Price,
-					"profit_est":  newCard.PSA10Price - newCard.RawPriceUSD - gradingCost - shippingCost - (newCard.PSA10Price * feePct),
+					"profit_est":  newCard.PSA10Price - newCard.RawUSD - gradingCost - shippingCost - (newCard.PSA10Price * feePct),
 				},
 				ActionItems: []string{
-					fmt.Sprintf("Buy raw at $%.2f", newCard.RawPriceUSD),
-					fmt.Sprintf("Expected profit: $%.2f", newCard.PSA10Price-newCard.RawPriceUSD-gradingCost-shippingCost-(newCard.PSA10Price*feePct)),
+					fmt.Sprintf("Buy raw at $%.2f", newCard.RawUSD),
+					fmt.Sprintf("Expected profit: $%.2f", newCard.PSA10Price-newCard.RawUSD-gradingCost-shippingCost-(newCard.PSA10Price*feePct)),
 					"Submit for grading with next batch",
 				},
 			}

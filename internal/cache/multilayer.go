@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-
-	"github.com/guarzo/pkmgradegap/internal/model"
 )
 
 // MultiLayerCache implements a three-tier caching system
@@ -49,15 +47,19 @@ type RemoteConfig struct {
 
 // CacheStats tracks cache performance metrics
 type CacheStats struct {
-	L1Hits     int64
-	L1Misses   int64
-	L2Hits     int64
-	L2Misses   int64
-	L3Hits     int64
-	L3Misses   int64
-	Evictions  int64
-	Prefetches int64
-	StartTime  time.Time
+	L1Hits         int64     `json:"l1_hits"`
+	L1Misses       int64     `json:"l1_misses"`
+	L1HitRate      float64   `json:"l1_hit_rate"`
+	L2Hits         int64     `json:"l2_hits"`
+	L2Misses       int64     `json:"l2_misses"`
+	L2HitRate      float64   `json:"l2_hit_rate"`
+	L3Hits         int64     `json:"l3_hits"`
+	L3Misses       int64     `json:"l3_misses"`
+	L3HitRate      float64   `json:"l3_hit_rate"`
+	OverallHitRate float64   `json:"overall_hit_rate"`
+	Evictions      int64     `json:"evictions"`
+	Prefetches     int64     `json:"prefetches"`
+	StartTime      time.Time `json:"start_time"`
 	mu         sync.RWMutex
 }
 
@@ -391,24 +393,6 @@ func (c *MultiLayerCache) prefetchTarget(target PrefetchTarget) error {
 	}
 
 	return nil
-}
-
-// Extended CacheStats with calculated fields
-type CacheStats struct {
-	L1Hits         int64     `json:"l1_hits"`
-	L1Misses       int64     `json:"l1_misses"`
-	L1HitRate      float64   `json:"l1_hit_rate"`
-	L2Hits         int64     `json:"l2_hits"`
-	L2Misses       int64     `json:"l2_misses"`
-	L2HitRate      float64   `json:"l2_hit_rate"`
-	L3Hits         int64     `json:"l3_hits"`
-	L3Misses       int64     `json:"l3_misses"`
-	L3HitRate      float64   `json:"l3_hit_rate"`
-	OverallHitRate float64   `json:"overall_hit_rate"`
-	Evictions      int64     `json:"evictions"`
-	Prefetches     int64     `json:"prefetches"`
-	StartTime      time.Time `json:"start_time"`
-	mu             sync.RWMutex
 }
 
 // PrefetchTarget represents something that should be preloaded

@@ -208,7 +208,7 @@ func TestClient_IsGradedCard(t *testing.T) {
 		{"BGS 9.5 Pikachu Card", true},
 		{"CGC 9 Mint Card", true},
 		{"Pokemon Raw Charizard NM", false},
-		{"Ungraded Pikachu Card", true}, // Contains "graded"
+		{"Ungraded Pikachu Card", false}, // "Ungraded" is raw, not graded
 		{"Pokemon Cards Lot", false},
 		{"PSA Ready Card", true},         // PSA mentioned
 		{"Authentic slab card", true},    // slab mentioned

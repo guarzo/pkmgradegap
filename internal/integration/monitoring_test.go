@@ -26,7 +26,7 @@ func TestSnapshotWorkflow(t *testing.T) {
 				SetName: "Test Set",
 				Rarity:  "Double Rare",
 			},
-			RawPriceUSD: 50.00,
+			RawUSD: 50.00,
 			Grades: analysis.Grades{
 				PSA10:  150.00,
 				Grade9: 100.00,
@@ -40,7 +40,7 @@ func TestSnapshotWorkflow(t *testing.T) {
 				SetName: "Test Set",
 				Rarity:  "Special Illustration Rare",
 			},
-			RawPriceUSD: 200.00,
+			RawUSD: 200.00,
 			Grades: analysis.Grades{
 				PSA10:  800.00,
 				Grade9: 400.00,
@@ -99,7 +99,7 @@ func TestAlertGeneration(t *testing.T) {
 					Name:   "Pikachu ex",
 					Number: "001",
 				},
-				RawPriceUSD: 50.00,
+				RawUSD: 50.00,
 				PSA10Price:  150.00,
 				Volatility:  10.0,
 			},
@@ -108,7 +108,7 @@ func TestAlertGeneration(t *testing.T) {
 					Name:   "Charizard ex",
 					Number: "025",
 				},
-				RawPriceUSD: 250.00,
+				RawUSD: 250.00,
 				PSA10Price:  850.00,
 				Volatility:  15.0,
 			},
@@ -125,7 +125,7 @@ func TestAlertGeneration(t *testing.T) {
 					Name:   "Pikachu ex",
 					Number: "001",
 				},
-				RawPriceUSD: 40.00,  // 20% drop
+				RawUSD: 40.00,  // 20% drop
 				PSA10Price:  175.00, // 16.7% increase
 				Volatility:  12.0,
 			},
@@ -134,7 +134,7 @@ func TestAlertGeneration(t *testing.T) {
 					Name:   "Charizard ex",
 					Number: "025",
 				},
-				RawPriceUSD: 200.00, // 20% drop
+				RawUSD: 200.00, // 20% drop
 				PSA10Price:  750.00, // 11.8% drop
 				Volatility:  25.0,   // High volatility
 			},
@@ -143,7 +143,7 @@ func TestAlertGeneration(t *testing.T) {
 					Name:   "Milotic ex",
 					Number: "150",
 				},
-				RawPriceUSD: 15.00,
+				RawUSD: 15.00,
 				PSA10Price:  65.00,
 				Volatility:  5.0,
 			},
@@ -255,7 +255,7 @@ func TestBulkOptimizer(t *testing.T) {
 					Name:   "Low Value",
 					Number: "001",
 				},
-				RawPriceUSD: 10.00,
+				RawUSD: 10.00,
 				Grades:      analysis.Grades{PSA10: 45.00},
 			},
 			Score: 10.00,
@@ -266,7 +266,7 @@ func TestBulkOptimizer(t *testing.T) {
 					Name:   "Mid Value",
 					Number: "002",
 				},
-				RawPriceUSD: 30.00,
+				RawUSD: 30.00,
 				Grades:      analysis.Grades{PSA10: 125.00},
 			},
 			Score: 70.00,
@@ -277,7 +277,7 @@ func TestBulkOptimizer(t *testing.T) {
 					Name:   "High Value",
 					Number: "003",
 				},
-				RawPriceUSD: 150.00,
+				RawUSD: 150.00,
 				Grades:      analysis.Grades{PSA10: 450.00},
 			},
 			Score: 275.00,
@@ -288,7 +288,7 @@ func TestBulkOptimizer(t *testing.T) {
 					Name:   "Premium",
 					Number: "004",
 				},
-				RawPriceUSD: 300.00,
+				RawUSD: 300.00,
 				Grades:      analysis.Grades{PSA10: 950.00},
 			},
 			Score: 625.00,
@@ -325,7 +325,7 @@ func TestMarketTiming(t *testing.T) {
 			SetName:   "Test Set",
 			Cards: map[string]*monitoring.SnapshotCardData{
 				"001-Pikachu ex": {
-					RawPriceUSD: 50.00,
+					RawUSD: 50.00,
 					PSA10Price:  150.00,
 				},
 			},
@@ -335,7 +335,7 @@ func TestMarketTiming(t *testing.T) {
 			SetName:   "Test Set",
 			Cards: map[string]*monitoring.SnapshotCardData{
 				"001-Pikachu ex": {
-					RawPriceUSD: 40.00,  // Raw dropped
+					RawUSD: 40.00,  // Raw dropped
 					PSA10Price:  170.00, // PSA10 increased
 				},
 			},
@@ -373,7 +373,7 @@ func TestEndToEndMonitoringWorkflow(t *testing.T) {
 				Number:  "001",
 				SetName: "Test Set",
 			},
-			RawPriceUSD: 50.00,
+			RawUSD: 50.00,
 			Grades:      analysis.Grades{PSA10: 150.00},
 		},
 	}
@@ -395,7 +395,7 @@ func TestEndToEndMonitoringWorkflow(t *testing.T) {
 				Number:  "001",
 				SetName: "Test Set",
 			},
-			RawPriceUSD: 42.00,                          // Price dropped
+			RawUSD: 42.00,                          // Price dropped
 			Grades:      analysis.Grades{PSA10: 175.00}, // PSA10 increased
 		},
 	}

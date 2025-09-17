@@ -321,7 +321,7 @@ func (e *FusionEngine) calculateOverallConfidence(data FusedData) ConfidenceScor
 	factors["raw_price"] = data.RawPrice.Confidence
 	factors["psa10_price"] = data.PSA10Price.Confidence
 
-	if data.Population != nil && data.Population.Total > 0 {
+	if data.Population != nil && data.Population.TotalGraded > 0 {
 		factors["population"] = 1.0
 	} else {
 		factors["population"] = 0.0

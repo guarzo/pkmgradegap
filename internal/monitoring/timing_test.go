@@ -56,7 +56,7 @@ func TestMarketAnalyzer(t *testing.T) {
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
 					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawPriceUSD: 20.00,
+					RawUSD: 20.00,
 					PSA10Price:  100.00,
 				},
 			},
@@ -66,7 +66,7 @@ func TestMarketAnalyzer(t *testing.T) {
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
 					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawPriceUSD: 18.00,
+					RawUSD: 18.00,
 					PSA10Price:  105.00,
 				},
 			},
@@ -76,7 +76,7 @@ func TestMarketAnalyzer(t *testing.T) {
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
 					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawPriceUSD: 16.00,
+					RawUSD: 16.00,
 					PSA10Price:  110.00,
 				},
 			},

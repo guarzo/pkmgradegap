@@ -47,7 +47,7 @@ func (c *ConfidenceCalculator) CalculateConfidence(data FusedData) ConfidenceSco
 	factors["data_freshness"] = c.calculateFreshnessScore(data)
 	factors["source_reliability"] = c.calculateSourceReliabilityScore(data)
 	factors["data_volume"] = c.calculateVolumeScore(data)
-	factors["price_variance"] = c.calculateVarianceScore(data)
+	factors["price_variance"] = c.varianceScoreForFusedData(data)
 	factors["market_volatility"] = c.calculateVolatilityScore(data)
 	factors["completeness"] = c.calculateCompletenessScore(data)
 
@@ -195,7 +195,7 @@ func (c *ConfidenceCalculator) calculateVarianceScore(data FusedPrice) float64 {
 	}
 }
 
-func (c *ConfidenceCalculator) calculateVarianceScore(data FusedData) float64 {
+func (c *ConfidenceCalculator) varianceScoreForFusedData(data FusedData) float64 {
 	prices := []FusedPrice{data.RawPrice, data.PSA10Price, data.PSA9Price, data.CGC95Price, data.BGS10Price}
 
 	var totalVariance float64
@@ -251,7 +251,7 @@ func (c *ConfidenceCalculator) calculateCompletenessScore(data FusedData) float6
 		score += 1.5
 	}
 
-	if data.Population != nil && data.Population.Total > 0 {
+	if data.Population != nil && data.Population.TotalGraded > 0 {
 		score += 1.0
 	}
 

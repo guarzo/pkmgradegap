@@ -50,8 +50,8 @@ func TestCreateSnapshotFromRows(t *testing.T) {
 
 	card1Key := "001-Test Card 1"
 	if card, exists := snapshot.Cards[card1Key]; exists {
-		if card.RawPriceUSD != 10.50 {
-			t.Errorf("Expected raw price 10.50, got %.2f", card.RawPriceUSD)
+		if card.RawUSD != 10.50 {
+			t.Errorf("Expected raw price 10.50, got %.2f", card.RawUSD)
 		}
 		if card.PSA10Price != 50.00 {
 			t.Errorf("Expected PSA10 price 50.00, got %.2f", card.PSA10Price)
@@ -68,7 +68,7 @@ func TestCompareSnapshots(t *testing.T) {
 		Cards: map[string]*SnapshotCardData{
 			"001-Test Card": {
 				Card:        model.Card{Name: "Test Card", Number: "001"},
-				RawPriceUSD: 10.00,
+				RawUSD: 10.00,
 				PSA10Price:  50.00,
 			},
 		},
@@ -80,7 +80,7 @@ func TestCompareSnapshots(t *testing.T) {
 		Cards: map[string]*SnapshotCardData{
 			"001-Test Card": {
 				Card:        model.Card{Name: "Test Card", Number: "001"},
-				RawPriceUSD: 8.00,  // 20% drop
+				RawUSD: 8.00,  // 20% drop
 				PSA10Price:  55.00, // 10% increase
 			},
 		},

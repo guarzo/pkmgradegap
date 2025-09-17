@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	reportpkg "github.com/guarzo/pkmgradegap/internal/report"
 )
 
 // HistoryEntry represents a single entry in the history CSV
@@ -15,7 +17,7 @@ type HistoryEntry struct {
 	Card        string
 	Number      string
 	Set         string
-	RawPriceUSD float64
+	RawUSD float64
 	PSA10USD    float64
 	DeltaUSD    float64
 	Score       float64
@@ -90,9 +92,9 @@ func (ha *HistoryAnalyzer) AppendHistory(path string, entries []HistoryEntry) er
 	if needsHeader {
 		header := []string{
 			"Timestamp", "Card", "Number", "Set",
-			"RawPriceUSD", "PSA10USD", "DeltaUSD", "Score", "Notes",
+			"RawUSD", "PSA10USD", "DeltaUSD", "Score", "Notes",
 		}
-		if err := writer.Write(header); err != nil {
+		if err := writer.Write(reportpkg.EscapeCSVRow(header)); err != nil {
 			return fmt.Errorf("writing header: %w", err)
 		}
 	}
@@ -104,13 +106,13 @@ func (ha *HistoryAnalyzer) AppendHistory(path string, entries []HistoryEntry) er
 			entry.Card,
 			entry.Number,
 			entry.Set,
-			fmt.Sprintf("%.2f", entry.RawPriceUSD),
+			fmt.Sprintf("%.2f", entry.RawUSD),
 			fmt.Sprintf("%.2f", entry.PSA10USD),
 			fmt.Sprintf("%.2f", entry.DeltaUSD),
 			fmt.Sprintf("%.2f", entry.Score),
 			entry.Notes,
 		}
-		if err := writer.Write(record); err != nil {
+		if err := writer.Write(reportpkg.EscapeCSVRow(record)); err != nil {
 			return fmt.Errorf("writing record: %w", err)
 		}
 	}
@@ -173,15 +175,15 @@ func (ha *HistoryAnalyzer) TrackPerformance(currentSnapshot *Snapshot) *Performa
 
 		outcome := RecommendationOutcome{
 			Entry:           entry,
-			CurrentRawPrice: currentCard.RawPriceUSD,
+			CurrentRawPrice: currentCard.RawUSD,
 			CurrentPSA10:    currentCard.PSA10Price,
-			RawPriceChange:  currentCard.RawPriceUSD - entry.RawPriceUSD,
+			RawPriceChange:  currentCard.RawUSD - entry.RawUSD,
 			PSA10Change:     currentCard.PSA10Price - entry.PSA10USD,
 		}
 
 		// Calculate if recommendation was good
-		originalROI := entry.DeltaUSD / entry.RawPriceUSD * 100
-		currentROI := (currentCard.PSA10Price - currentCard.RawPriceUSD) / currentCard.RawPriceUSD * 100
+		originalROI := entry.DeltaUSD / entry.RawUSD * 100
+		currentROI := (currentCard.PSA10Price - currentCard.RawUSD) / currentCard.RawUSD * 100
 
 		if currentROI > originalROI {
 			outcome.Outcome = "IMPROVED"
@@ -326,7 +328,7 @@ func (ha *HistoryAnalyzer) parseHistoryEntry(record []string) (HistoryEntry, err
 		Card:        record[1],
 		Number:      record[2],
 		Set:         record[3],
-		RawPriceUSD: rawPrice,
+		RawUSD: rawPrice,
 		PSA10USD:    psa10Price,
 		DeltaUSD:    delta,
 		Score:       score,
@@ -446,7 +448,7 @@ func (pr *PerformanceReport) CalculateStats() {
 			successful++
 		}
 
-		roi := (rec.PSA10Change - rec.RawPriceChange) / rec.Entry.RawPriceUSD * 100
+		roi := (rec.PSA10Change - rec.RawPriceChange) / rec.Entry.RawUSD * 100
 		totalROI += roi
 
 		// Track best and worst
@@ -933,7 +935,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 	}
 
 	for _, row := range metadata {
-		if err := writer.Write(row); err != nil {
+		if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 			return fmt.Errorf("writing metadata: %w", err)
 		}
 	}
@@ -949,7 +951,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		}
 
 		for _, row := range trendSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing trend analysis: %w", err)
 			}
 		}
@@ -967,7 +969,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		}
 
 		for _, row := range maSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing moving averages: %w", err)
 			}
 		}
@@ -984,7 +986,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		}
 
 		for _, row := range momentumSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing momentum analysis: %w", err)
 			}
 		}
@@ -1001,7 +1003,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		}
 
 		for _, row := range seasonalSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing seasonal patterns: %w", err)
 			}
 		}
@@ -1023,7 +1025,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 				entry.Card,
 				entry.Number,
 				entry.Set,
-				fmt.Sprintf("%.2f", entry.RawPriceUSD),
+				fmt.Sprintf("%.2f", entry.RawUSD),
 				fmt.Sprintf("%.2f", entry.PSA10USD),
 				fmt.Sprintf("%.2f", entry.DeltaUSD),
 			}
@@ -1034,7 +1036,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		topPerformersSection = append(topPerformersSection, []string{})
 
 		for _, row := range topPerformersSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing top performers: %w", err)
 			}
 		}
@@ -1085,7 +1087,7 @@ func ExportTrendReportToCSV(report *TrendReport, filename string) error {
 		}
 
 		for _, row := range cardTrendsSection {
-			if err := writer.Write(row); err != nil {
+			if err := writer.Write(reportpkg.EscapeCSVRow(row)); err != nil {
 				return fmt.Errorf("writing card trends: %w", err)
 			}
 		}
