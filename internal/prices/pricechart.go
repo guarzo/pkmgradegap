@@ -29,15 +29,44 @@ func (p *PriceCharting) Available() bool {
 	return p.token != ""
 }
 
+// GetSalesFromPriceData extracts sales data from a PCMatch result
+// This can be used to augment the sales provider with PriceCharting data
+func (p *PriceCharting) GetSalesFromPriceData(match *PCMatch) (avgSalePrice float64, salesCount int, hasData bool) {
+	if match == nil || len(match.RecentSales) == 0 {
+		return 0, 0, false
+	}
+
+	// Convert cents to dollars for average price
+	avgPriceCents := match.AvgSalePrice
+	if avgPriceCents > 0 {
+		avgSalePrice = float64(avgPriceCents) / 100.0
+	}
+
+	return avgSalePrice, match.SalesCount, true
+}
+
 // Result normalized to cents (integers) to avoid float issues.
 type PCMatch struct {
-	ID            string
-	ProductName   string
-	LooseCents    int // "loose-price" (ungraded)
-	Grade9Cents   int // "graded-price" (Grade 9)
-	Grade95Cents  int // "box-only-price" (Grade 9.5)
-	PSA10Cents    int // "manual-only-price" (PSA 10)
-	BGS10Cents    int // "bgs-10-price" (BGS 10)
+	ID           string
+	ProductName  string
+	LooseCents   int // "loose-price" (ungraded)
+	Grade9Cents  int // "graded-price" (Grade 9)
+	Grade95Cents int // "box-only-price" (Grade 9.5)
+	PSA10Cents   int // "manual-only-price" (PSA 10)
+	BGS10Cents   int // "bgs-10-price" (BGS 10)
+	// Sales data extracted from API (if available)
+	RecentSales  []SaleData // Recent eBay sales tracked by PriceCharting
+	SalesCount   int        // Total number of sales
+	LastSoldDate string     // Date of last sale
+	AvgSalePrice int        // Average sale price in cents
+}
+
+// SaleData represents a single sale tracked by PriceCharting
+type SaleData struct {
+	PriceCents int
+	Date       string
+	Grade      string
+	Source     string // "eBay", "PWCC", etc.
 }
 
 func (p *PriceCharting) LookupCard(setName string, c model.Card) (*PCMatch, error) {
@@ -136,7 +165,8 @@ func pcFrom(m map[string]any) *PCMatch {
 		}
 		return 0
 	}
-	return &PCMatch{
+
+	result := &PCMatch{
 		ID:           fmt.Sprint(m["id"]),
 		ProductName:  fmt.Sprint(m["product-name"]),
 		LooseCents:   get("loose-price"),
@@ -145,4 +175,36 @@ func pcFrom(m map[string]any) *PCMatch {
 		PSA10Cents:   get("manual-only-price"),
 		BGS10Cents:   get("bgs-10-price"),
 	}
+
+	// Extract sales data if available
+	if salesData, ok := m["sales-data"].([]interface{}); ok {
+		for _, sale := range salesData {
+			if saleMap, ok := sale.(map[string]interface{}); ok {
+				saleInfo := SaleData{
+					PriceCents: get("sale-price"),
+					Date:       fmt.Sprint(saleMap["sale-date"]),
+					Grade:      fmt.Sprint(saleMap["grade"]),
+					Source:     "eBay", // PriceCharting primarily tracks eBay
+				}
+				result.RecentSales = append(result.RecentSales, saleInfo)
+			}
+		}
+		result.SalesCount = len(result.RecentSales)
+	}
+
+	// Extract additional sales metadata
+	if lastSold, ok := m["last-sold-date"].(string); ok {
+		result.LastSoldDate = lastSold
+	}
+
+	// Calculate average sale price if we have sales
+	if len(result.RecentSales) > 0 {
+		total := 0
+		for _, sale := range result.RecentSales {
+			total += sale.PriceCents
+		}
+		result.AvgSalePrice = total / len(result.RecentSales)
+	}
+
+	return result
 }

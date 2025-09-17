@@ -1,0 +1,98 @@
+{
+  "timestamp": "2025-02-01T10:00:00Z",
+  "set_name": "Surging Sparks",
+  "cards": {
+    "001-Pikachu ex": {
+      "card": {
+        "name": "Pikachu ex",
+        "number": "001",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Double Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 38.00,
+      "psa10_price": 145.00,
+      "psa9_price": 95.00,
+      "grade95_price": 105.00,
+      "bgs10_price": 155.00,
+      "volatility": 12.3,
+      "population": {
+        "total_graded": 1850,
+        "psa10_population": 650,
+        "psa9_population": 850,
+        "psa8_population": 350
+      }
+    },
+    "025-Charizard ex": {
+      "card": {
+        "name": "Charizard ex",
+        "number": "025",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Special Illustration Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 195.00,
+      "psa10_price": 725.00,
+      "psa9_price": 380.00,
+      "grade95_price": 450.00,
+      "bgs10_price": 780.00,
+      "volatility": 18.5,
+      "population": {
+        "total_graded": 1250,
+        "psa10_population": 225,
+        "psa9_population": 525,
+        "psa8_population": 500
+      }
+    },
+    "189-Latias ex": {
+      "card": {
+        "name": "Latias ex",
+        "number": "189",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Special Illustration Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 125.00,
+      "psa10_price": 425.00,
+      "psa9_price": 225.00,
+      "grade95_price": 275.00,
+      "bgs10_price": 450.00,
+      "volatility": 25.8,
+      "population": {
+        "total_graded": 625,
+        "psa10_population": 125,
+        "psa9_population": 300,
+        "psa8_population": 200
+      }
+    },
+    "150-Milotic ex": {
+      "card": {
+        "name": "Milotic ex",
+        "number": "150",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Special Illustration Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 15.00,
+      "psa10_price": 65.00,
+      "psa9_price": 35.00,
+      "grade95_price": 45.00,
+      "bgs10_price": 70.00,
+      "volatility": 5.2,
+      "population": {
+        "total_graded": 225,
+        "psa10_population": 45,
+        "psa9_population": 100,
+        "psa8_population": 80
+      }
+    }
+  }
+}

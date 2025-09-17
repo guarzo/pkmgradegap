@@ -185,7 +185,7 @@ func TestCalculateBreakEven(t *testing.T) {
 		feePct       float64
 		expected     float64
 	}{
-		{50.0, 25.0, 20.0, 0.13, 109.20}, // (50+25+20)/(1-0.13) = 95/0.87
+		{50.0, 25.0, 20.0, 0.13, 109.20},  // (50+25+20)/(1-0.13) = 95/0.87
 		{100.0, 30.0, 25.0, 0.10, 172.22}, // (100+30+25)/(1-0.10) = 155/0.90
 	}
 
@@ -237,7 +237,7 @@ func TestContainsJapanese(t *testing.T) {
 		{"ピカチュウ", true}, // Katakana
 		{"Pokemon", false},
 		{"ポケモン", true}, // Katakana
-		{"日本", true},     // Kanji
+		{"日本", true},   // Kanji
 		{"ひらがな", true}, // Hiragana
 		{"Mixed ピカチュウ Text", true},
 		{"", false},

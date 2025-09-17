@@ -1,0 +1,75 @@
+{
+  "timestamp": "2025-01-15T10:00:00Z",
+  "set_name": "Surging Sparks",
+  "cards": {
+    "001-Pikachu ex": {
+      "card": {
+        "name": "Pikachu ex",
+        "number": "001",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Double Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 45.50,
+      "psa10_price": 125.00,
+      "psa9_price": 85.00,
+      "grade95_price": 95.00,
+      "bgs10_price": 135.00,
+      "volatility": 8.5,
+      "population": {
+        "total_graded": 1250,
+        "psa10_population": 450,
+        "psa9_population": 600,
+        "psa8_population": 200
+      }
+    },
+    "025-Charizard ex": {
+      "card": {
+        "name": "Charizard ex",
+        "number": "025",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Special Illustration Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 250.00,
+      "psa10_price": 850.00,
+      "psa9_price": 425.00,
+      "grade95_price": 500.00,
+      "bgs10_price": 900.00,
+      "volatility": 15.2,
+      "population": {
+        "total_graded": 850,
+        "psa10_population": 125,
+        "psa9_population": 350,
+        "psa8_population": 375
+      }
+    },
+    "189-Latias ex": {
+      "card": {
+        "name": "Latias ex",
+        "number": "189",
+        "set_name": "Surging Sparks",
+        "set_id": "sv8",
+        "rarity": "Special Illustration Rare",
+        "image_small": "",
+        "image_large": ""
+      },
+      "raw_price_usd": 85.00,
+      "psa10_price": 275.00,
+      "psa9_price": 165.00,
+      "grade95_price": 200.00,
+      "bgs10_price": 300.00,
+      "volatility": 10.1,
+      "population": {
+        "total_graded": 425,
+        "psa10_population": 75,
+        "psa9_population": 200,
+        "psa8_population": 150
+      }
+    }
+  }
+}

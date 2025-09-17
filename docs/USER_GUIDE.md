@@ -31,6 +31,9 @@ export POKEMONTCGIO_API_KEY="your_key_here"
 
 # Optional: Set up eBay App ID (see docs/EBAY_SETUP_GUIDE.md)
 export EBAY_APP_ID="your_app_id_here"
+
+# NEW: Pokemon Price Tracker API for sales data
+export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 ```
 
 **Quick Test:**
@@ -46,7 +49,11 @@ export EBAY_APP_ID="your_app_id_here"
 
 **Step 1: Find Current Opportunities**
 ```bash
+# Basic analysis
 ./pkmgradegap --set "Surging Sparks" --top 10
+
+# Enhanced with all data sources (recommended)
+./pkmgradegap --set "Surging Sparks" --with-pop --with-sales --top 10
 ```
 
 **Step 2: Save Results for Later**
@@ -93,6 +100,43 @@ export EBAY_APP_ID="your_app_id_here"
 ./pkmgradegap --set "Surging Sparks" \
   --with-volatility \
   --why                     # Show detailed scoring breakdown
+```
+
+## New Features (Sprint 3A)
+
+### Sales Data Integration
+**What:** Real sales transaction data from eBay and other marketplaces
+**Why:** More accurate than listing prices; shows what buyers actually pay
+**How:** Enable with `--with-sales` flag
+
+```bash
+# Use actual sales data for pricing
+./pkmgradegap --set "Surging Sparks" --with-sales --top 10
+```
+
+### Population Data Integration
+**What:** PSA grading population statistics
+**Why:** Low-population cards are more valuable; affects investment decisions
+**How:** Enable with `--with-pop` flag
+
+```bash
+# Include population scarcity in scoring
+./pkmgradegap --set "Surging Sparks" --with-pop --top 10
+```
+
+### Combined Data Sources
+**What:** Use all available data for maximum accuracy
+**Why:** Better investment decisions with complete information
+**How:** Combine all flags
+
+```bash
+# Maximum accuracy mode
+./pkmgradegap --set "Surging Sparks" \
+  --with-pop \       # Population data
+  --with-sales \     # Sales data
+  --with-ebay \      # Current listings
+  --with-volatility \ # Price stability
+  --top 20
 ```
 
 ## Analysis Modes Explained

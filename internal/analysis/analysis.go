@@ -26,6 +26,7 @@ type Row struct {
 	Grades     Grades
 	Population *model.PSAPopulation // Optional population data
 	Volatility float64              // 30-day price variance (0-1 scale)
+	SalesData  *model.SalesData     // Optional sales data
 }
 
 type Config struct {
@@ -40,8 +41,8 @@ type Config struct {
 	ShowWhy          bool
 	WithEbay         bool
 	EbayMax          int
-	WithVolatility   bool    // Include volatility data
-	AllowThinPremium bool    // Allow PSA9/PSA10 > 0.75
+	WithVolatility   bool // Include volatility data
+	AllowThinPremium bool // Allow PSA9/PSA10 > 0.75
 }
 
 type ScoredRow struct {
@@ -217,7 +218,7 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 		if r.RawUSD < config.MinRawUSD {
 			continue
 		}
-		
+
 		// Skip negative ROI cards
 		if r.Grades.PSA10 <= r.RawUSD {
 			continue
@@ -256,9 +257,28 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 			score *= config.JapaneseWeight
 		}
 
-		// Population multipliers removed - no public PSA API available
+		// Population-based scoring factors
 		psa10Rate := float64(0)
 		psa9Rate := float64(0)
+
+		// Apply population scarcity bonus if population data is available
+		if r.Population != nil {
+			// Calculate PSA 10 rate (success rate)
+			if r.Population.TotalGraded > 0 {
+				psa10Rate = float64(r.Population.PSA10) / float64(r.Population.TotalGraded)
+				psa9Rate = float64(r.Population.PSA9) / float64(r.Population.TotalGraded)
+			}
+
+			// Apply scarcity bonus based on PSA 10 population
+			scarcityBonus := calculateScarcityBonus(r.Population.PSA10)
+			score += scarcityBonus
+
+			// Apply population quality bonus (high PSA 10 rate indicates good card quality)
+			if r.Population.TotalGraded >= 100 { // Need sufficient sample size
+				qualityBonus := psa10Rate * 5 // Bonus for cards that grade well
+				score += qualityBonus
+			}
+		}
 
 		// Apply volatility penalty if available
 		if config.WithVolatility && r.Volatility > 0 {
@@ -280,8 +300,33 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 		}
 
 		if config.ShowWhy {
-			scoredRow.ScoreBreakdown = fmt.Sprintf("Profit:%.2f Premium:%.2f JPN:%v",
-				netProfit, score-netProfit, isJapanese)
+			breakdown := fmt.Sprintf("Profit:%.2f", netProfit)
+
+			// Add premium lift breakdown
+			if r.Grades.PSA10 > 0 && r.Grades.Grade9 > 0 {
+				premiumLift := (1 - r.Grades.Grade9/r.Grades.PSA10) * 10
+				breakdown += fmt.Sprintf(" Premium:%.2f", premiumLift)
+			}
+
+			// Add population factors if available
+			if r.Population != nil {
+				scarcityBonus := calculateScarcityBonus(r.Population.PSA10)
+				breakdown += fmt.Sprintf(" Scarcity:%.2f", scarcityBonus)
+
+				if r.Population.TotalGraded >= 100 {
+					qualityBonus := psa10Rate * 5
+					breakdown += fmt.Sprintf(" Quality:%.2f", qualityBonus)
+				}
+			}
+
+			// Add other factors
+			breakdown += fmt.Sprintf(" JPN:%v", isJapanese)
+
+			if config.WithVolatility && r.Volatility > 0.2 {
+				breakdown += " Vol:0.9x"
+			}
+
+			scoredRow.ScoreBreakdown = breakdown
 		}
 
 		scoredRows = append(scoredRows, scoredRow)
@@ -406,9 +451,9 @@ func ReportCrossgrade(rows []Row) [][]string {
 	}
 
 	// PSA crossgrade submission costs
-	crossgradeCost := 30.0  // PSA crossgrade service
-	shippingCost := 20.0    // Round trip shipping
-	sellingFeePct := 0.13   // eBay/TCG fees
+	crossgradeCost := 30.0 // PSA crossgrade service
+	shippingCost := 20.0   // Round trip shipping
+	sellingFeePct := 0.13  // eBay/TCG fees
 
 	for _, r := range rows {
 		if r.Grades.Grade95 <= 0 || r.Grades.PSA10 <= 0 {
@@ -438,4 +483,25 @@ func ReportCrossgrade(rows []Row) [][]string {
 	}
 
 	return out
+}
+
+// calculateScarcityBonus returns a bonus score based on PSA 10 population scarcity
+func calculateScarcityBonus(psa10Population int) float64 {
+	// Scarcity bonus tiers based on PSA 10 population
+	switch {
+	case psa10Population == 0:
+		return 0 // No data, no bonus
+	case psa10Population <= 10:
+		return 15.0 // Ultra rare - huge bonus
+	case psa10Population <= 50:
+		return 10.0 // Very rare - large bonus
+	case psa10Population <= 200:
+		return 5.0 // Rare - medium bonus
+	case psa10Population <= 500:
+		return 2.0 // Uncommon - small bonus
+	case psa10Population <= 1000:
+		return 1.0 // Somewhat common - minimal bonus
+	default:
+		return 0.0 // Common - no bonus
+	}
 }

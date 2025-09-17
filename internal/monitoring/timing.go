@@ -12,15 +12,15 @@ import (
 type MarketTrend string
 
 const (
-	TrendUp    MarketTrend = "UPWARD"
-	TrendDown  MarketTrend = "DOWNWARD"
-	TrendFlat  MarketTrend = "FLAT"
+	TrendUp   MarketTrend = "UPWARD"
+	TrendDown MarketTrend = "DOWNWARD"
+	TrendFlat MarketTrend = "FLAT"
 )
 
 // TimingRecommendation provides buy/sell guidance
 type TimingRecommendation struct {
 	Card         model.Card
-	Action       string // "BUY", "SELL", "HOLD", "SUBMIT"
+	Action       string  // "BUY", "SELL", "HOLD", "SUBMIT"
 	Confidence   float64 // 0-100%
 	Trend        MarketTrend
 	Reasoning    string
@@ -227,7 +227,7 @@ func calculateConfidence(rawPrices, psa10Prices []float64) float64 {
 
 	// Strong signal: opposite trends
 	if (rawTrend == TrendDown && psa10Trend == TrendUp) ||
-	   (rawTrend == TrendUp && psa10Trend == TrendDown) {
+		(rawTrend == TrendUp && psa10Trend == TrendDown) {
 		confidence += 30
 	}
 
@@ -334,4 +334,119 @@ func average(values []float64) float64 {
 		sum += v
 	}
 	return sum / float64(len(values))
+}
+
+// FormatTimingReport creates a human-readable timing analysis report
+func FormatTimingReport(recommendations []TimingRecommendation, setName string, seasonal map[string]string) string {
+	output := fmt.Sprintf("MARKET TIMING ANALYSIS - %s\n", setName)
+	output += "===============================\n\n"
+
+	if len(recommendations) == 0 {
+		output += "No timing recommendations available (insufficient data or no profitable opportunities)\n"
+		return output
+	}
+
+	// Group recommendations by action
+	buyRecs := make([]TimingRecommendation, 0)
+	sellRecs := make([]TimingRecommendation, 0)
+	submitRecs := make([]TimingRecommendation, 0)
+
+	for _, rec := range recommendations {
+		switch rec.Action {
+		case "BUY":
+			buyRecs = append(buyRecs, rec)
+		case "SELL":
+			sellRecs = append(sellRecs, rec)
+		case "SUBMIT":
+			submitRecs = append(submitRecs, rec)
+		}
+	}
+
+	// Seasonal analysis section
+	if len(seasonal) > 0 {
+		output += "SEASONAL PATTERNS:\n"
+		output += "==================\n"
+		if bestMonth, ok := seasonal["best_month"]; ok {
+			output += fmt.Sprintf("Best Month for Selling: %s\n", bestMonth)
+		}
+		if worstMonth, ok := seasonal["worst_month"]; ok {
+			output += fmt.Sprintf("Best Month for Buying: %s\n", worstMonth)
+		}
+		if delta, ok := seasonal["seasonal_delta"]; ok {
+			output += fmt.Sprintf("Seasonal Price Variation: %s\n", delta)
+		}
+		output += "\n"
+	}
+
+	// Buy recommendations
+	if len(buyRecs) > 0 {
+		output += "BUY RECOMMENDATIONS:\n"
+		output += "====================\n"
+		for i, rec := range buyRecs {
+			if i >= 10 { // Limit to top 10
+				break
+			}
+			output += formatSingleRecommendation(rec, i+1)
+		}
+		output += "\n"
+	}
+
+	// Sell recommendations
+	if len(sellRecs) > 0 {
+		output += "SELL RECOMMENDATIONS:\n"
+		output += "=====================\n"
+		for i, rec := range sellRecs {
+			if i >= 10 { // Limit to top 10
+				break
+			}
+			output += formatSingleRecommendation(rec, i+1)
+		}
+		output += "\n"
+	}
+
+	// Submit recommendations
+	if len(submitRecs) > 0 {
+		output += "GRADING SUBMISSION RECOMMENDATIONS:\n"
+		output += "===================================\n"
+		for i, rec := range submitRecs {
+			if i >= 10 { // Limit to top 10
+				break
+			}
+			output += formatSingleRecommendation(rec, i+1)
+		}
+		output += "\n"
+	}
+
+	// Summary
+	output += "SUMMARY:\n"
+	output += "========\n"
+	output += fmt.Sprintf("Total Recommendations: %d\n", len(recommendations))
+	output += fmt.Sprintf("Buy Opportunities: %d\n", len(buyRecs))
+	output += fmt.Sprintf("Sell Opportunities: %d\n", len(sellRecs))
+	output += fmt.Sprintf("Submit Opportunities: %d\n", len(submitRecs))
+
+	// Calculate average confidence
+	avgConfidence := 0.0
+	for _, rec := range recommendations {
+		avgConfidence += rec.Confidence
+	}
+	if len(recommendations) > 0 {
+		avgConfidence /= float64(len(recommendations))
+	}
+	output += fmt.Sprintf("Average Confidence: %.1f%%\n", avgConfidence)
+
+	return output
+}
+
+func formatSingleRecommendation(rec TimingRecommendation, rank int) string {
+	output := fmt.Sprintf("%d. %s - %s (#%s)\n", rank, rec.Card.Name, rec.Card.SetName, rec.Card.Number)
+	output += fmt.Sprintf("   Action: %s (Confidence: %.1f%%)\n", rec.Action, rec.Confidence)
+	output += fmt.Sprintf("   Trend: %s\n", rec.Trend)
+	output += fmt.Sprintf("   Current Price: $%.2f\n", rec.CurrentPrice)
+	if rec.OptimalPrice > 0 {
+		output += fmt.Sprintf("   Target Price: $%.2f\n", rec.OptimalPrice)
+	}
+	output += fmt.Sprintf("   Reasoning: %s\n", rec.Reasoning)
+	output += "\n"
+	return output
 }

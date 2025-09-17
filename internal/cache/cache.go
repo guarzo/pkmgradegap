@@ -45,25 +45,35 @@ func New(path string) (*Cache, error) {
 }
 
 func (c *Cache) Get(key string, target interface{}) (bool, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
+	c.mu.RLock()
 	entry, ok := c.entries[key]
 	if !ok {
+		c.mu.RUnlock()
 		return false, nil
 	}
 
 	// Check TTL
-	if entry.TTL > 0 && time.Since(entry.Timestamp) > entry.TTL {
+	expired := entry.TTL > 0 && time.Since(entry.Timestamp) > entry.TTL
+	if !expired {
+		// Entry is valid, unmarshal and return
+		err := json.Unmarshal(entry.Data, target)
+		c.mu.RUnlock()
+		if err != nil {
+			return false, fmt.Errorf("unmarshal cache entry: %w", err)
+		}
+		return true, nil
+	}
+	c.mu.RUnlock()
+
+	// Entry expired, need write lock to delete
+	c.mu.Lock()
+	// Double-check the entry still exists and is expired
+	if e, exists := c.entries[key]; exists && e.TTL > 0 && time.Since(e.Timestamp) > e.TTL {
 		delete(c.entries, key)
-		return false, nil
 	}
+	c.mu.Unlock()
 
-	if err := json.Unmarshal(entry.Data, target); err != nil {
-		return false, fmt.Errorf("unmarshal cache entry: %w", err)
-	}
-
-	return true, nil
+	return false, nil
 }
 
 func (c *Cache) Put(key string, value interface{}, ttl time.Duration) error {
@@ -80,10 +90,12 @@ func (c *Cache) Put(key string, value interface{}, ttl time.Duration) error {
 	}
 	c.mu.Unlock()
 
-	return c.save()
+	return c.saveLocked()
 }
 
-func (c *Cache) save() error {
+// saveLocked saves the cache to disk without additional locking
+// Call this when you already have a lock or after releasing it
+func (c *Cache) saveLocked() error {
 	// Create parent directory if needed
 	if dir := filepath.Dir(c.path); dir != "" && dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
@@ -91,6 +103,7 @@ func (c *Cache) save() error {
 		}
 	}
 
+	// Take a read lock to safely marshal entries
 	c.mu.RLock()
 	data, err := json.MarshalIndent(c.entries, "", "  ")
 	c.mu.RUnlock()
@@ -102,12 +115,17 @@ func (c *Cache) save() error {
 	return os.WriteFile(c.path, data, 0644)
 }
 
+// save is deprecated, use saveLocked instead
+func (c *Cache) save() error {
+	return c.saveLocked()
+}
+
 // Clear removes all cache entries
 func (c *Cache) Clear() error {
 	c.mu.Lock()
 	c.entries = make(map[string]Entry)
 	c.mu.Unlock()
-	return c.save()
+	return c.saveLocked()
 }
 
 // Remove deletes a specific cache entry
@@ -115,7 +133,7 @@ func (c *Cache) Remove(key string) error {
 	c.mu.Lock()
 	delete(c.entries, key)
 	c.mu.Unlock()
-	return c.save()
+	return c.saveLocked()
 }
 
 // BuildKey creates semantic cache keys

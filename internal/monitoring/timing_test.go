@@ -12,10 +12,10 @@ func TestCalculateTrend(t *testing.T) {
 		prices   []float64
 		expected MarketTrend
 	}{
-		{[]float64{10, 12, 14, 16, 18}, TrendUp},     // Clear upward trend
-		{[]float64{18, 16, 14, 12, 10}, TrendDown},   // Clear downward trend
-		{[]float64{10, 11, 10, 11, 10}, TrendFlat},   // Flat/sideways
-		{[]float64{10, 10.1, 10.2}, TrendFlat},      // Very small changes
+		{[]float64{10, 12, 14, 16, 18}, TrendUp},   // Clear upward trend
+		{[]float64{18, 16, 14, 12, 10}, TrendDown}, // Clear downward trend
+		{[]float64{10, 11, 10, 11, 10}, TrendFlat}, // Flat/sideways
+		{[]float64{10, 10.1, 10.2}, TrendFlat},     // Very small changes
 	}
 
 	for i, test := range tests {
@@ -28,7 +28,7 @@ func TestCalculateTrend(t *testing.T) {
 
 func TestCalculateConfidence(t *testing.T) {
 	// Opposite trends should give high confidence
-	rawPrices := []float64{20, 18, 16, 14, 12}   // Downward
+	rawPrices := []float64{20, 18, 16, 14, 12}        // Downward
 	psa10Prices := []float64{100, 105, 110, 115, 120} // Upward
 
 	confidence := calculateConfidence(rawPrices, psa10Prices)

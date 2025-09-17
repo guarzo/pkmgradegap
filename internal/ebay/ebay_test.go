@@ -11,10 +11,10 @@ import (
 
 // MockClient is a test-only implementation
 type MockClient struct {
-	appID      string
-	listings   []Listing
-	err        error
-	available  bool
+	appID     string
+	listings  []Listing
+	err       error
+	available bool
 }
 
 // Ensure MockClient implements Provider interface
@@ -130,20 +130,20 @@ func (m *MockClient) generateBidCount(variant int) int {
 // Test the mock client
 func TestMockClient_GeneratesListings(t *testing.T) {
 	mockClient := NewMockClient()
-	
+
 	listings, err := mockClient.SearchRawListings("Test Set", "Pikachu", "001", 3)
 	if err != nil {
 		t.Fatalf("Mock search failed: %v", err)
 	}
-	
+
 	if len(listings) == 0 {
 		t.Error("Mock should return listings")
 	}
-	
+
 	if len(listings) > 3 {
 		t.Errorf("Mock returned %d listings, expected max 3", len(listings))
 	}
-	
+
 	for i, listing := range listings {
 		if listing.Title == "" {
 			t.Errorf("Listing %d has empty title", i)
@@ -159,7 +159,7 @@ func TestMockClient_GeneratesListings(t *testing.T) {
 
 func TestMockClient_CustomListings(t *testing.T) {
 	mockClient := NewMockClient()
-	
+
 	customListings := []Listing{
 		{
 			Title:     "Custom Card",
@@ -168,18 +168,18 @@ func TestMockClient_CustomListings(t *testing.T) {
 			Condition: "Near Mint",
 		},
 	}
-	
+
 	mockClient.SetTestListings(customListings)
-	
+
 	listings, err := mockClient.SearchRawListings("Any", "Card", "001", 5)
 	if err != nil {
 		t.Fatalf("Mock search failed: %v", err)
 	}
-	
+
 	if len(listings) != 1 {
 		t.Errorf("Expected 1 custom listing, got %d", len(listings))
 	}
-	
+
 	if listings[0].Title != "Custom Card" {
 		t.Errorf("Expected custom title, got %s", listings[0].Title)
 	}
@@ -187,10 +187,10 @@ func TestMockClient_CustomListings(t *testing.T) {
 
 func TestMockClient_ErrorHandling(t *testing.T) {
 	mockClient := NewMockClient()
-	
+
 	testErr := fmt.Errorf("test error")
 	mockClient.SetTestError(testErr)
-	
+
 	_, err := mockClient.SearchRawListings("Any", "Card", "001", 1)
 	if err != testErr {
 		t.Errorf("Expected test error, got %v", err)
@@ -210,10 +210,10 @@ func TestClient_IsGradedCard(t *testing.T) {
 		{"Pokemon Raw Charizard NM", false},
 		{"Ungraded Pikachu Card", true}, // Contains "graded"
 		{"Pokemon Cards Lot", false},
-		{"PSA Ready Card", true}, // PSA mentioned
-		{"Authentic slab card", true}, // slab mentioned
-		{"Perfect 10 Gem Mint", true}, // perfect 10 mentioned
-		{"Near Mint Card", false}, // Just condition, not graded
+		{"PSA Ready Card", true},         // PSA mentioned
+		{"Authentic slab card", true},    // slab mentioned
+		{"Perfect 10 Gem Mint", true},    // perfect 10 mentioned
+		{"Near Mint Card", false},        // Just condition, not graded
 		{"Graded by professional", true}, // graded mentioned
 	}
 
@@ -247,11 +247,11 @@ func TestMockClient_PriceGeneration(t *testing.T) {
 	mockClient := NewMockClient()
 
 	tests := []struct {
-		cardName     string
-		number       string
-		expectMin    float64
-		expectMax    float64
-		description  string
+		cardName    string
+		number      string
+		expectMin   float64
+		expectMax   float64
+		description string
 	}{
 		{"Charizard", "001", 30.0, 80.0, "Popular Pokemon should have higher price"},
 		{"Pikachu", "002", 20.0, 60.0, "Popular Pokemon should have higher price"},

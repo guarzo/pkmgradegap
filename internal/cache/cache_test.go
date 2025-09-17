@@ -373,4 +373,3 @@ func TestCache_NonExistentKey(t *testing.T) {
 		t.Error("Expected not to find non-existent key")
 	}
 }
-

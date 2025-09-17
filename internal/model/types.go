@@ -17,8 +17,8 @@ type Card struct {
 	SetName    string
 	Number     string
 	Rarity     string
-	TCGPlayer  *TCGPlayerBlock   // may be nil
-	Cardmarket *CardmarketBlock  // may be nil
+	TCGPlayer  *TCGPlayerBlock  // may be nil
+	Cardmarket *CardmarketBlock // may be nil
 }
 
 type TCGPlayerBlock struct {
@@ -37,14 +37,14 @@ type TCGPlayerBlock struct {
 type CardmarketBlock struct {
 	URL     string
 	Updated string
-	Prices struct {
-		AverageSellPrice    *float64 `json:"averageSellPrice,omitempty"`
-		TrendPrice          *float64 `json:"trendPrice,omitempty"`
-		ReverseHoloTrend    *float64 `json:"reverseHoloTrend,omitempty"`
-		Avg7                *float64 `json:"avg7,omitempty"`
-		Avg30               *float64 `json:"avg30,omitempty"`
-		ReverseHoloAvg7     *float64 `json:"reverseHoloAvg7,omitempty"`
-		ReverseHoloAvg30    *float64 `json:"reverseHoloAvg30,omitempty"`
+	Prices  struct {
+		AverageSellPrice *float64 `json:"averageSellPrice,omitempty"`
+		TrendPrice       *float64 `json:"trendPrice,omitempty"`
+		ReverseHoloTrend *float64 `json:"reverseHoloTrend,omitempty"`
+		Avg7             *float64 `json:"avg7,omitempty"`
+		Avg30            *float64 `json:"avg30,omitempty"`
+		ReverseHoloAvg7  *float64 `json:"reverseHoloAvg7,omitempty"`
+		ReverseHoloAvg30 *float64 `json:"reverseHoloAvg30,omitempty"`
 	} `json:"prices"`
 }
 
@@ -54,4 +54,20 @@ type PSAPopulation struct {
 	PSA9        int
 	PSA8        int
 	LastUpdated time.Time
+}
+
+type SalesData struct {
+	CardName        string
+	SetName         string
+	CardNumber      string
+	LastUpdated     time.Time
+	SalesCount      int       // Total number of sales
+	AvgSalePrice    float64   // Average sale price (raw/ungraded)
+	MedianSalePrice float64   // Median sale price
+	PSA10Sales      int       // Number of PSA 10 sales
+	PSA10AvgPrice   float64   // Average PSA 10 sale price
+	PSA9Sales       int       // Number of PSA 9 sales
+	PSA9AvgPrice    float64   // Average PSA 9 sale price
+	RecentSales     []float64 // Recent sale prices (last 30 days)
+	DataSource      string    // Where the data came from
 }

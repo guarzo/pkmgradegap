@@ -20,7 +20,6 @@ type Listing struct {
 	BuyItNow  bool
 }
 
-
 type Client struct {
 	appID      string
 	httpClient *http.Client
@@ -31,11 +30,11 @@ type findingResponse struct {
 	FindItemsAdvancedResponse []struct {
 		SearchResult []struct {
 			Item []struct {
-				ItemID            []string `json:"itemId"`
-				Title             []string `json:"title"`
-				ViewItemURL       []string `json:"viewItemURL"`
-				ListingType       []string `json:"listingType"`
-				Condition         []struct {
+				ItemID      []string `json:"itemId"`
+				Title       []string `json:"title"`
+				ViewItemURL []string `json:"viewItemURL"`
+				ListingType []string `json:"listingType"`
+				Condition   []struct {
 					ConditionDisplayName []string `json:"conditionDisplayName"`
 				} `json:"condition"`
 				SellingStatus []struct {
@@ -105,7 +104,7 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
-	
+
 	// Add required headers
 	req.Header.Set("X-EBAY-SOA-SERVICE-NAME", "FindingService")
 	req.Header.Set("X-EBAY-SOA-OPERATION-NAME", "findItemsAdvanced")
@@ -135,7 +134,7 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 		len(ebayResp.FindItemsAdvancedResponse[0].SearchResult) > 0 {
 
 		searchResult := ebayResp.FindItemsAdvancedResponse[0].SearchResult[0]
-		
+
 		for _, item := range searchResult.Item {
 			listing, err := c.parseItem(item)
 			if err != nil {
@@ -148,7 +147,7 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 			}
 
 			listings = append(listings, listing)
-			
+
 			// Break if we have enough listings
 			if len(listings) >= max {
 				break
@@ -160,11 +159,11 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 }
 
 func (c *Client) parseItem(item struct {
-	ItemID            []string `json:"itemId"`
-	Title             []string `json:"title"`
-	ViewItemURL       []string `json:"viewItemURL"`
-	ListingType       []string `json:"listingType"`
-	Condition         []struct {
+	ItemID      []string `json:"itemId"`
+	Title       []string `json:"title"`
+	ViewItemURL []string `json:"viewItemURL"`
+	ListingType []string `json:"listingType"`
+	Condition   []struct {
 		ConditionDisplayName []string `json:"conditionDisplayName"`
 	} `json:"condition"`
 	SellingStatus []struct {

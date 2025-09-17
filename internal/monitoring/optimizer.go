@@ -10,11 +10,11 @@ import (
 
 // PSAServiceLevel represents different PSA grading service tiers
 type PSAServiceLevel struct {
-	Name            string
+	Name             string
 	MaxDeclaredValue float64
-	CostPerCard     float64
-	TurnaroundDays  int
-	MinCards        int
+	CostPerCard      float64
+	TurnaroundDays   int
+	MinCards         int
 }
 
 var PSAServiceLevels = []PSAServiceLevel{
@@ -38,24 +38,24 @@ type SubmissionBatch struct {
 
 // SubmissionCard represents a card to be submitted for grading
 type SubmissionCard struct {
-	Card         model.Card
-	RawPriceUSD  float64
-	PSA10Price   float64
-	PSA9Price    float64
+	Card          model.Card
+	RawPriceUSD   float64
+	PSA10Price    float64
+	PSA9Price     float64
 	ExpectedGrade float64
 	ExpectedValue float64
 }
 
 // BulkOptimizer optimizes card submissions across PSA service levels
 type BulkOptimizer struct {
-	feePct float64
+	feePct               float64
 	shippingCostPerBatch float64
 }
 
 // NewBulkOptimizer creates a new bulk submission optimizer
 func NewBulkOptimizer(feePct, shippingCostPerBatch float64) *BulkOptimizer {
 	return &BulkOptimizer{
-		feePct: feePct,
+		feePct:               feePct,
 		shippingCostPerBatch: shippingCostPerBatch,
 	}
 }

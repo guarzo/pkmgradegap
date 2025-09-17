@@ -36,11 +36,11 @@ func (m *mockClient) SearchRawListings(setName, cardName, number string, max int
 // generateTestListings creates test data for unit tests
 func (m *mockClient) generateTestListings(setName, cardName, number string, max int) []Listing {
 	basePrice := m.calculateTestPrice(cardName, number)
-	
+
 	var listings []Listing
 	priceVariations := []float64{0.9, 1.0, 1.1, 1.15, 1.25}
 	conditions := []string{"Near Mint", "Lightly Played", "Moderately Played", "Near Mint", "Mint"}
-	
+
 	for i := 0; i < max && i < 5; i++ {
 		listing := Listing{
 			Title:     m.generateTestTitle(setName, cardName, number, i),
@@ -53,18 +53,18 @@ func (m *mockClient) generateTestListings(setName, cardName, number string, max 
 		}
 		listings = append(listings, listing)
 	}
-	
+
 	return listings
 }
 
 func (m *mockClient) calculateTestPrice(cardName, number string) float64 {
 	basePrice := 15.0
-	
+
 	popularNames := map[string]float64{
 		"charizard": 3.0, "pikachu": 2.0, "mew": 2.5, "lugia": 2.0,
 		"rayquaza": 2.0, "arceus": 1.8, "dialga": 1.5, "palkia": 1.5,
 	}
-	
+
 	cardLower := strings.ToLower(cardName)
 	for name, multiplier := range popularNames {
 		if strings.Contains(cardLower, name) {
@@ -72,7 +72,7 @@ func (m *mockClient) calculateTestPrice(cardName, number string) float64 {
 			break
 		}
 	}
-	
+
 	if num, err := strconv.Atoi(number); err == nil {
 		if num <= 20 {
 			basePrice *= 1.5
@@ -80,7 +80,7 @@ func (m *mockClient) calculateTestPrice(cardName, number string) float64 {
 			basePrice *= 1.2
 		}
 	}
-	
+
 	variance := 0.8 + (0.4 * rand.Float64())
 	return basePrice * variance
 }
@@ -93,7 +93,7 @@ func (m *mockClient) generateTestTitle(setName, cardName, number string, variant
 		"%s Set %s Pokemon Card #%s Raw Ungraded",
 		"Pokemon %s %s #%s Near Mint Trading Card",
 	}
-	
+
 	template := templates[variant%len(templates)]
 	return fmt.Sprintf(template, setName, cardName, number)
 }

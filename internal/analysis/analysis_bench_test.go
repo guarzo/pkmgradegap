@@ -153,7 +153,7 @@ func generateTestRows(count int) []Row {
 		number := generateCardNumber(i)
 
 		// Vary prices to create realistic distribution
-		rawPrice := 10.0 + float64(i%100)*0.5  // $10-$60 range
+		rawPrice := 10.0 + float64(i%100)*0.5              // $10-$60 range
 		psa10Price := rawPrice * (1.5 + float64(i%10)*0.2) // 1.5x to 3.5x multiplier
 
 		row := Row{
@@ -172,8 +172,8 @@ func generateTestRows(count int) []Row {
 					},
 				},
 			},
-			RawUSD: rawPrice,
-			RawSrc: "tcgplayer.market",
+			RawUSD:  rawPrice,
+			RawSrc:  "tcgplayer.market",
 			RawNote: "USD",
 			Grades: Grades{
 				PSA10:   psa10Price,
@@ -253,7 +253,7 @@ func generateCardNumber(index int) string {
 		return "SR"
 	}
 	// Regular numbers 1-300
-	return string(rune('0' + (index%10))) + string(rune('0' + ((index/10)%10))) + string(rune('0' + ((index/100)%3)))
+	return string(rune('0'+(index%10))) + string(rune('0'+((index/10)%10))) + string(rune('0'+((index/100)%3)))
 }
 
 // Benchmark memory allocation patterns

@@ -22,7 +22,22 @@
       "Bash(EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --with-ebay --ebay-max 3 --top 1)",
       "Bash(PRICECHARTING_TOKEN=\"test\" EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-ebay --ebay-max 3 --top 3)",
       "Bash(EBAY_APP_ID=\"mock\" ./debug-ebay)",
-      "Bash(PRICECHARTING_TOKEN=\"test\" EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-ebay --ebay-max 2 --top 3)"
+      "Bash(PRICECHARTING_TOKEN=\"test\" EBAY_APP_ID=\"mock\" ./pkmgradegap --set \"Surging Sparks\" --analysis rank --with-ebay --ebay-max 2 --top 3)",
+      "Bash(go tool cover:*)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --help)",
+      "Bash(export PRICECHARTING_TOKEN=\"test\")",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --analysis alerts --top 1)",
+      "Bash(awk:*)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1 --snapshot-out test_snapshot.json)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1 --save-snapshot)",
+      "Bash(python3:*)",
+      "WebFetch(domain:130point.com)",
+      "WebSearch",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 1 --verbose)",
+      "Bash(xargs basename:*)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --analysis alerts --help)",
+      "Bash(PRICECHARTING_TOKEN=\"test\" POKEMON_PRICE_TRACKER_API_KEY=\"test\" ./pkmgradegap --set \"Surging Sparks\" --with-pop --with-sales --top 1 --verbose)"
     ],
     "deny": [],
     "ask": []

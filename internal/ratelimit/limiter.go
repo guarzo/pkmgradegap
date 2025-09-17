@@ -107,9 +107,9 @@ func min(a, b int) int {
 
 // RateLimiterConfig holds configuration for API rate limiters
 type RateLimiterConfig struct {
-	PokemonTCGIO   *Limiter
-	PriceCharting  *Limiter
-	EBay           *Limiter
+	PokemonTCGIO  *Limiter
+	PriceCharting *Limiter
+	EBay          *Limiter
 }
 
 // NewDefaultRateLimiters creates rate limiters with sensible defaults for each API
