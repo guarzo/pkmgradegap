@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/guarzo/pkmgradegap/internal/analysis"
-	"github.com/guarzo/pkmgradegap/internal/fusion"
+	// "github.com/guarzo/pkmgradegap/internal/fusion" // TODO: Update when fusion package is refactored
 	"github.com/guarzo/pkmgradegap/internal/model"
 )
 
@@ -29,12 +29,11 @@ type Stage interface {
 
 // StageData carries data between pipeline stages
 type StageData struct {
-	Card        model.Card
-	CardData    interface{}
-	PriceData   interface{}
-	PopData     interface{}
-	SalesData   interface{}
-	FusedData   *fusion.FusedData
+	Card      model.Card
+	CardData  interface{}
+	PriceData interface{}
+	PopData   interface{}
+	// FusedData   *fusion.FusedData // TODO: Update when fusion package is refactored
 	AnalysisRow *analysis.Row
 	Error       error
 	Metadata    map[string]interface{}
@@ -415,17 +414,19 @@ func (s *PopulationFetchStage) Process(ctx context.Context, input <-chan StageDa
 }
 
 // DataFusionStage combines data from multiple sources
+// TODO: Update when fusion package is refactored
 type DataFusionStage struct {
-	fusionEngine *fusion.FusionEngine
+	// fusionEngine *fusion.FusionEngine
 }
 
-func NewDataFusionStage(engine *fusion.FusionEngine) *DataFusionStage {
-	return &DataFusionStage{fusionEngine: engine}
-}
+// func NewDataFusionStage(engine *fusion.FusionEngine) *DataFusionStage {
+// 	return &DataFusionStage{fusionEngine: engine}
+// }
 
 func (s *DataFusionStage) Name() string   { return "data_fusion" }
 func (s *DataFusionStage) Parallel() bool { return true }
 
+// TODO: Update when fusion package is refactored
 func (s *DataFusionStage) Process(ctx context.Context, input <-chan StageData) <-chan StageData {
 	output := make(chan StageData, 100)
 
@@ -439,16 +440,16 @@ func (s *DataFusionStage) Process(ctx context.Context, input <-chan StageData) <
 					return
 				}
 
-				if s.fusionEngine != nil {
-					// Convert raw data to fusion format and fuse
-					// This is a simplified example - real implementation would convert
-					// the various data types to fusion.PriceData format
-					fusedData := &fusion.FusedData{
-						Card: data.Card,
-						// Would populate based on actual data types
-					}
-					data.FusedData = fusedData
-				}
+				// if s.fusionEngine != nil {
+				// 	// Convert raw data to fusion format and fuse
+				// 	// This is a simplified example - real implementation would convert
+				// 	// the various data types to fusion.PriceData format
+				// 	fusedData := &fusion.FusedData{
+				// 		Card: data.Card,
+				// 		// Would populate based on actual data types
+				// 	}
+				// 	data.FusedData = fusedData
+				// }
 
 				select {
 				case output <- data:
@@ -471,7 +472,8 @@ type AnalysisStage struct {
 }
 
 type AnalysisEngine interface {
-	Analyze(ctx context.Context, fusedData *fusion.FusedData) (*analysis.Row, error)
+	// Analyze(ctx context.Context, fusedData *fusion.FusedData) (*analysis.Row, error) // TODO: Update when fusion package is refactored
+	Analyze(ctx context.Context, data interface{}) (*analysis.Row, error)
 }
 
 func NewAnalysisStage(analyzer AnalysisEngine) *AnalysisStage {
@@ -494,8 +496,10 @@ func (s *AnalysisStage) Process(ctx context.Context, input <-chan StageData) <-c
 					return
 				}
 
-				if s.analyzer != nil && data.FusedData != nil {
-					analysisRow, err := s.analyzer.Analyze(ctx, data.FusedData)
+				// if s.analyzer != nil && data.FusedData != nil {
+				// 	analysisRow, err := s.analyzer.Analyze(ctx, data.FusedData)
+				if s.analyzer != nil {
+					analysisRow, err := s.analyzer.Analyze(ctx, data.CardData)
 					if err != nil {
 						data.Error = fmt.Errorf("analysis failed: %w", err)
 					} else {
@@ -606,9 +610,16 @@ func (p *Pipeline) GetMetrics() *PipelineMetrics {
 	p.metrics.mu.RLock()
 	defer p.metrics.mu.RUnlock()
 
-	// Return a copy
-	metrics := *p.metrics
-	metrics.StageMetrics = make(map[string]*StageMetrics)
+	// Return a copy without copying the mutex
+	metrics := PipelineMetrics{
+		StartTime:      p.metrics.StartTime,
+		EndTime:        p.metrics.EndTime,
+		TotalItems:     p.metrics.TotalItems,
+		ProcessedItems: p.metrics.ProcessedItems,
+		ErrorCount:     p.metrics.ErrorCount,
+		Throughput:     p.metrics.Throughput,
+		StageMetrics:   make(map[string]*StageMetrics),
+	}
 	for k, v := range p.metrics.StageMetrics {
 		stageCopy := *v
 		metrics.StageMetrics[k] = &stageCopy

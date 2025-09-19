@@ -291,16 +291,26 @@ func (f *ConcurrentFetcher) ProgressChannel() <-chan Progress {
 }
 
 // GetMetrics returns current performance metrics
-func (f *ConcurrentFetcher) GetMetrics() FetchMetrics {
+func (f *ConcurrentFetcher) GetMetrics() *FetchMetrics {
 	f.metrics.mu.RLock()
 	defer f.metrics.mu.RUnlock()
 
-	metrics := *f.metrics
+	metrics := FetchMetrics{
+		TotalRequests:  f.metrics.TotalRequests,
+		SuccessfulReqs: f.metrics.SuccessfulReqs,
+		FailedRequests: f.metrics.FailedRequests,
+		AverageLatency: f.metrics.AverageLatency,
+		TotalLatency:   f.metrics.TotalLatency,
+		CacheHits:      f.metrics.CacheHits,
+		APICallsMade:   f.metrics.APICallsMade,
+		StartTime:      f.metrics.StartTime,
+		EndTime:        f.metrics.EndTime,
+	}
 	if !metrics.EndTime.IsZero() && metrics.SuccessfulReqs > 0 {
 		metrics.AverageLatency = metrics.TotalLatency / time.Duration(metrics.SuccessfulReqs)
 	}
 
-	return metrics
+	return &metrics
 }
 
 // updateMetrics updates performance metrics

@@ -4,17 +4,18 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/guarzo/pkmgradegap/internal/fusion"
+	// "github.com/guarzo/pkmgradegap/internal/fusion" // TODO: Update when fusion package is refactored
 )
 
 // ConvertToPriceData converts GameStop listings to fusion.PriceData for the fusion engine
-func ConvertToPriceData(listingData *ListingData) []fusion.PriceData {
+// TODO: Update when fusion package is refactored
+func ConvertToPriceData(listingData *ListingData) []interface{} { // []fusion.PriceData {
 	if listingData == nil || len(listingData.ActiveList) == 0 {
-		return []fusion.PriceData{}
+		return []interface{}{} // []fusion.PriceData{}
 	}
 
-	priceData := make([]fusion.PriceData, 0, len(listingData.ActiveList))
+	// priceData := make([]fusion.PriceData, 0, len(listingData.ActiveList))
+	priceData := make([]interface{}, 0, len(listingData.ActiveList))
 
 	for _, listing := range listingData.ActiveList {
 		if !listing.InStock || listing.Price <= 0 {
@@ -28,19 +29,28 @@ func ConvertToPriceData(listingData *ListingData) []fusion.PriceData {
 		// Calculate confidence based on listing quality
 		confidence := calculateListingConfidence(listing)
 
-		data := fusion.PriceData{
-			Value:    listing.Price,
-			Currency: "USD", // GameStop is USD
-			Source: fusion.DataSource{
-				Name:       "GameStop",
-				Type:       fusion.SourceTypeListing,
-				Freshness:  calculateFreshness(listingData.LastUpdated),
-				Volume:     listingData.ListingCount,
-				Confidence: confidence,
-				Timestamp:  listingData.LastUpdated,
-			},
-			Raw:   isRaw,
-			Grade: grade,
+		// data := fusion.PriceData{
+		// 	Value:    listing.Price,
+		// 	Currency: "USD", // GameStop is USD
+		// 	Source: fusion.DataSource{
+		// 		Name:       "GameStop",
+		// 		Type:       fusion.SourceTypeListing,
+		// 		Freshness:  calculateFreshness(listingData.LastUpdated),
+		// 		Volume:     listingData.ListingCount,
+		// 		Confidence: confidence,
+		// 		Timestamp:  listingData.LastUpdated,
+		// 	},
+		// 	Raw:   isRaw,
+		// 	Grade: grade,
+		// }
+		data := map[string]interface{}{
+			"value":      listing.Price,
+			"currency":   "USD",
+			"source":     "GameStop",
+			"freshness":  calculateFreshness(listingData.LastUpdated),
+			"confidence": confidence,
+			"raw":        isRaw,
+			"grade":      grade,
 		}
 
 		priceData = append(priceData, data)
@@ -50,8 +60,10 @@ func ConvertToPriceData(listingData *ListingData) []fusion.PriceData {
 }
 
 // ConvertToPriceDataByGrade converts GameStop listings grouped by grade
-func ConvertToPriceDataByGrade(listingData *ListingData) map[string][]fusion.PriceData {
-	result := make(map[string][]fusion.PriceData)
+// TODO: Update when fusion package is refactored
+func ConvertToPriceDataByGrade(listingData *ListingData) map[string][]interface{} { // map[string][]fusion.PriceData {
+	// result := make(map[string][]fusion.PriceData)
+	result := make(map[string][]interface{})
 
 	if listingData == nil || len(listingData.ActiveList) == 0 {
 		return result
@@ -67,19 +79,27 @@ func ConvertToPriceDataByGrade(listingData *ListingData) map[string][]fusion.Pri
 
 		confidence := calculateListingConfidence(listing)
 
-		data := fusion.PriceData{
-			Value:    listing.Price,
-			Currency: "USD",
-			Source: fusion.DataSource{
-				Name:       "GameStop",
-				Type:       fusion.SourceTypeListing,
-				Freshness:  calculateFreshness(listingData.LastUpdated),
-				Volume:     listingData.ListingCount,
-				Confidence: confidence,
-				Timestamp:  listingData.LastUpdated,
-			},
-			Raw:   isRawCard(grade, listing.Title),
-			Grade: grade,
+		// data := fusion.PriceData{
+		// 	Value:    listing.Price,
+		// 	Currency: "USD",
+		// 	Source: fusion.DataSource{
+		// 		Name:       "GameStop",
+		// 		Type:       fusion.SourceTypeListing,
+		// 		Freshness:  calculateFreshness(listingData.LastUpdated),
+		// 		Volume:     listingData.ListingCount,
+		// 		Confidence: confidence,
+		// 		Timestamp:  listingData.LastUpdated,
+		// 	},
+		// 	Raw:   isRawCard(grade, listing.Title),
+		// 	Grade: grade,
+		// }
+		data := map[string]interface{}{
+			"value":      listing.Price,
+			"currency":   "USD",
+			"source":     "GameStop",
+			"confidence": confidence,
+			"raw":        isRawCard(grade, listing.Title),
+			"grade":      grade,
 		}
 
 		result[key] = append(result[key], data)
@@ -213,15 +233,15 @@ func getGradeKey(grade, title string) string {
 
 	// Check for 9.5 grades (BGS 9.5, CGC 9.5) before checking for 9 grades
 	if strings.Contains(gradeLower, "9.5") || strings.Contains(titleLower, "9.5") ||
-	   strings.Contains(gradeLower, "cgc") || strings.Contains(titleLower, "cgc") {
+		strings.Contains(gradeLower, "cgc") || strings.Contains(titleLower, "cgc") {
 		return "cgc95"
 	}
 
 	// Check for 9 grades (PSA 9, BGS 9)
 	if (strings.Contains(gradeLower, "psa 9") && !strings.Contains(gradeLower, "9.5")) ||
-	   (strings.Contains(gradeLower, "bgs 9") && !strings.Contains(gradeLower, "9.5")) ||
-	   (strings.Contains(titleLower, "psa 9") && !strings.Contains(titleLower, "9.5")) ||
-	   (strings.Contains(titleLower, "bgs 9") && !strings.Contains(titleLower, "9.5")) {
+		(strings.Contains(gradeLower, "bgs 9") && !strings.Contains(gradeLower, "9.5")) ||
+		(strings.Contains(titleLower, "psa 9") && !strings.Contains(titleLower, "9.5")) ||
+		(strings.Contains(titleLower, "bgs 9") && !strings.Contains(titleLower, "9.5")) {
 		return "psa9"
 	}
 
@@ -281,10 +301,12 @@ func calculateFreshness(lastUpdated time.Time) time.Duration {
 }
 
 // Helper to merge GameStop data with other sources in the fusion engine
-func MergeWithFusionEngine(engine *fusion.FusionEngine, gameStopData *ListingData,
-	otherPrices map[string][]fusion.PriceData) map[string]fusion.FusedPrice {
+// TODO: Update when fusion package is refactored
+func MergeWithFusionEngine(engine interface{}, gameStopData *ListingData,
+	otherPrices map[string][]interface{}) map[string]interface{} { // map[string]fusion.FusedPrice {
 
-	result := make(map[string]fusion.FusedPrice)
+	// result := make(map[string]fusion.FusedPrice)
+	result := make(map[string]interface{})
 
 	// Convert GameStop data by grade
 	gameStopPrices := ConvertToPriceDataByGrade(gameStopData)
@@ -293,7 +315,8 @@ func MergeWithFusionEngine(engine *fusion.FusionEngine, gameStopData *ListingDat
 	allGrades := []string{"raw", "psa9", "cgc95", "psa10", "bgs10"}
 
 	for _, grade := range allGrades {
-		var combinedPrices []fusion.PriceData
+		// var combinedPrices []fusion.PriceData
+		var combinedPrices []interface{}
 
 		// Add GameStop prices for this grade
 		if gsPrice, exists := gameStopPrices[grade]; exists {
@@ -307,7 +330,8 @@ func MergeWithFusionEngine(engine *fusion.FusionEngine, gameStopData *ListingDat
 
 		// Fuse the prices
 		if len(combinedPrices) > 0 {
-			result[grade] = engine.FusePrice(combinedPrices)
+			// result[grade] = engine.FusePrice(combinedPrices)
+			result[grade] = combinedPrices // TODO: Implement fusion logic
 		}
 	}
 

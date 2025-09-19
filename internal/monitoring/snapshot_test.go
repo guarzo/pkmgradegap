@@ -67,9 +67,9 @@ func TestCompareSnapshots(t *testing.T) {
 		SetName:   "Test Set",
 		Cards: map[string]*SnapshotCardData{
 			"001-Test Card": {
-				Card:        model.Card{Name: "Test Card", Number: "001"},
-				RawUSD: 10.00,
-				PSA10Price:  50.00,
+				Card:       model.Card{Name: "Test Card", Number: "001"},
+				RawUSD:     10.00,
+				PSA10Price: 50.00,
 			},
 		},
 	}
@@ -79,9 +79,9 @@ func TestCompareSnapshots(t *testing.T) {
 		SetName:   "Test Set",
 		Cards: map[string]*SnapshotCardData{
 			"001-Test Card": {
-				Card:        model.Card{Name: "Test Card", Number: "001"},
-				RawUSD: 8.00,  // 20% drop
-				PSA10Price:  55.00, // 10% increase
+				Card:       model.Card{Name: "Test Card", Number: "001"},
+				RawUSD:     8.00,  // 20% drop
+				PSA10Price: 55.00, // 10% increase
 			},
 		},
 	}

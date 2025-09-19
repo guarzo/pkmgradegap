@@ -1,6 +1,7 @@
 package gamestop
 
 import (
+	"compress/flate"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -19,7 +20,9 @@ import (
 	"github.com/guarzo/pkmgradegap/internal/ratelimit"
 )
 
-// GameStopClient implements the Provider interface for GameStop
+// GameStopClient implements web scraping for GameStop's website
+// NOTE: This is a web scraper, not an official API client.
+// GameStop does not provide a public API for their inventory.
 type GameStopClient struct {
 	config  Config
 	client  *http.Client
@@ -54,11 +57,15 @@ func NewGameStopClient(config Config) *GameStopClient {
 }
 
 func (g *GameStopClient) Available() bool {
-	return true // GameStop is always available with our bypass method
+	return true // Web scraping is available but may break if website structure changes
 }
 
 func (g *GameStopClient) GetProviderName() string {
 	return "GameStop"
+}
+
+func (g *GameStopClient) IsMockMode() bool {
+	return false // This is a real web scraping provider
 }
 
 func (g *GameStopClient) GetListings(setName, cardName, number string) (*ListingData, error) {
@@ -242,30 +249,42 @@ func (g *GameStopClient) getReader(resp *http.Response) (io.Reader, error) {
 	case "gzip":
 		gzipReader, err := gzip.NewReader(resp.Body)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 		}
 		reader = gzipReader
 	case "br":
 		reader = brotli.NewReader(resp.Body)
 	case "deflate":
-		// TODO: Add deflate support if needed
+		// Use flate.NewReader for deflate decompression
+		reader = flate.NewReader(resp.Body)
+	case "":
+		// No compression
+		reader = resp.Body
+	default:
+		// Unsupported compression, log and continue with raw body
+		// This is more resilient than failing completely
 		reader = resp.Body
 	}
 
 	return reader, nil
 }
 
+// parseSearchResults extracts product listings from GameStop's HTML response.
+// This function implements a two-stage parsing approach to handle GameStop's
+// dynamic content loading patterns:
+// 1. First attempts to parse structured JSON data from window.__INITIAL_STATE__
+// 2. Falls back to HTML parsing if JSON extraction fails
 func (g *GameStopClient) parseSearchResults(html string) ([]Listing, error) {
 	var listings []Listing
 
-	// Look for the window.__INITIAL_STATE__ JSON data
+	// Look for the window.__INITIAL_STATE__ JSON data - this contains the main product data
 	if initialState := g.extractInitialState(html); initialState != "" {
 		if parsed := g.parseInitialStateJSON(initialState); len(parsed) > 0 {
 			listings = append(listings, parsed...)
 		}
 	}
 
-	// Also try to parse HTML product tiles as fallback
+	// Also try to parse HTML product tiles as fallback for cases where JSON parsing fails
 	if htmlParsed := g.parseHTMLProductTiles(html); len(htmlParsed) > 0 {
 		listings = append(listings, htmlParsed...)
 	}
@@ -286,17 +305,22 @@ func (g *GameStopClient) extractInitialState(html string) string {
 	return ""
 }
 
+// parseInitialStateJSON extracts product listings from GameStop's JSON state data.
+// GameStop embeds product data in window.__INITIAL_STATE__ as JSON, which contains
+// the complete product catalog data including prices, availability, and metadata.
+// This method navigates the nested JSON structure to locate product arrays and
+// converts each product object into a standardized Listing struct.
 func (g *GameStopClient) parseInitialStateJSON(jsonStr string) []Listing {
 	var listings []Listing
 
-	// Parse the JSON structure
+	// Parse the JSON structure - expect nested object with product arrays
 	var state map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &state); err != nil {
 		return listings
 	}
 
-	// Navigate through the JSON to find products
-	// The structure might be something like: products.results or searchResults.products
+	// Navigate through the JSON to find products using common GameStop state patterns
+	// The structure varies but typically follows: products.results or searchResults.products
 	if products := g.extractProductsFromState(state); len(products) > 0 {
 		for _, product := range products {
 			if listing := g.convertProductToListing(product); listing != nil {

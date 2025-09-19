@@ -1,22 +1,24 @@
 # Pokemon Grade Gap Analyzer
 
-Analyze price differences between raw and graded Pokemon cards to identify profitable grading opportunities.
+Analyze price differences between raw and graded Pokemon cards to identify profitable grading opportunities with multi-source data fusion.
 
 ## Features
 
-- **Rank Mode**: Find the best grading opportunities with deterministic scoring algorithm
+- **Multi-Source Data Fusion**: Combine prices from PriceCharting, eBay, GameStop, and sales data
+- **Intelligent Scoring**: Advanced algorithm with population scarcity and volatility factors
+- **GameStop Integration**: Trade-in values and buylist pricing for arbitrage opportunities
 - **Cost Analysis**: Account for grading fees, shipping, and marketplace selling costs
-- **Set Age Filtering**: Focus on recent sets with better print quality
-- **Japanese Card Weighting**: Bonus scoring for Japanese cards (typically better centering)
-- **Smart Caching**: Reduce API calls with local JSON cache and TTL management
-- **Reproducible Analysis**: Save/load price snapshots for consistent results
-- **History Tracking**: Track top picks over time for trend analysis
-- **Price Alerts**: Monitor price changes between snapshots (Phase 3)
-- **Market Timing**: Get buy/sell recommendations based on historical trends (Phase 3)
-- **Bulk Optimization**: Optimize PSA submission batches by service level (Phase 3)
-- **Trend Analysis**: Analyze historical performance of recommendations (Phase 3)
-- **eBay Integration**: Live eBay listings for market validation with mock mode for testing (Phase 4)
-- **Comprehensive Testing**: Full unit test coverage with mock data providers (Phase 4)
+- **Web Interface**: Interactive dashboard with Chart.js visualizations and real-time updates
+- **Japanese Card Weighting**: Bonus scoring for Japanese cards (better centering)
+- **Smart Caching**: Multi-layer cache with predictive loading and TTL management
+- **Price Alerts**: Monitor price changes between snapshots with severity levels
+- **Market Timing**: Seasonal recommendations based on historical trends
+- **Bulk Optimization**: Optimize PSA submission batches by service level
+- **Population Data**: PSA population integration for scarcity scoring
+- **eBay Integration**: Live eBay listings for market validation
+- **eBay Listing Manager**: Manage your own eBay listings with intelligent repricing
+- **Sales History**: Actual transaction data from multiple marketplaces
+- **Load Testing**: Performance validation framework included
 
 ## Quick Start
 
@@ -32,8 +34,19 @@ export PRICECHARTING_TOKEN="your_token_here"  # Required - Get from pricechartin
 export POKEMONTCGIO_API_KEY="optional_key"     # Optional - Higher rate limits
 export EBAY_APP_ID="optional_app_id"           # Optional - For live eBay listings
 
+# For eBay Listing Manager (optional):
+export EBAY_CLIENT_ID="your_client_id"         # eBay OAuth App ID
+export EBAY_CLIENT_SECRET="your_secret"        # eBay OAuth Secret
+export EBAY_REDIRECT_URI="http://localhost:8080/api/ebay/callback"
+
+# GameStop integration uses web scraping (no API key needed)
+export POKEMON_PRICE_TRACKER_API_KEY="key"     # Optional - For sales data
+
 # Find best grading opportunities (default mode)
 ./pkmgradegap --set "Surging Sparks"
+
+# Or start the web interface
+./pkmgradegap server --port 8080 --auto-open
 ```
 
 ## Usage Examples
@@ -60,6 +73,16 @@ export EBAY_APP_ID="optional_app_id"           # Optional - For live eBay listin
 ### Advanced Features
 
 ```bash
+# Include GameStop trade-in values (web scraping)
+./pkmgradegap --set "Surging Sparks" --with-gamestop
+# Note: No API key required, but may fail if website structure changes
+
+# Enable data fusion from multiple sources
+./pkmgradegap --set "Surging Sparks" --fusion-mode --with-sales --with-gamestop
+
+# Include population data for scarcity scoring
+./pkmgradegap --set "Surging Sparks" --with-pop
+
 # Save snapshot for reproducible analysis
 ./pkmgradegap --set "Surging Sparks" \
   --snapshot-out prices_20250916.json \
@@ -86,7 +109,25 @@ export EBAY_APP_ID="optional_app_id"           # Optional - For live eBay listin
 ./pkmgradegap --set "Surging Sparks" --analysis psa9-cgc95-bgs95-vs-psa10
 ```
 
-### Phase 3: Monitoring & Alerts
+### Web Interface
+
+```bash
+# Start the web server
+./pkmgradegap server --port 8080
+
+# Auto-open browser
+./pkmgradegap server --auto-open
+
+# The web interface provides:
+# - Interactive dashboard with real-time updates
+# - Chart.js visualizations for price trends
+# - Advanced filtering and search
+# - Batch analysis for multiple sets
+# - Export to CSV/JSON/PDF
+# - Theme selection (auto/light/dark)
+```
+
+### Monitoring & Alerts
 
 ```bash
 # Compare price snapshots and generate alerts
@@ -113,7 +154,7 @@ export EBAY_APP_ID="optional_app_id"           # Optional - For live eBay listin
 ## Command-Line Flags
 
 ### Required
-- `--set STRING`: Set name to analyze
+- `--set STRING`: Set name to analyze (or use `server` to start web interface)
 
 ### Analysis Options
 - `--analysis STRING`: Mode: rank|raw-vs-psa10|psa9-cgc95-bgs95-vs-psa10|crossgrade|alerts|trends|bulk-optimize|market-timing (default: rank)
@@ -132,22 +173,36 @@ export EBAY_APP_ID="optional_app_id"           # Optional - For live eBay listin
 - `--japanese-weight FLOAT`: Multiplier for Japanese cards (default: 1.0)
 - `--why`: Show scoring factor breakdown
 
+### Data Sources
+- `--with-ebay`: Fetch current eBay listings (requires EBAY_APP_ID)
+- `--with-gamestop`: Include GameStop trade-in values
+- `--with-pop`: Include PSA population data
+- `--with-sales`: Include sales transaction data
+- `--with-volatility`: Include 30-day price volatility data
+- `--fusion-mode`: Enable multi-source data fusion
+- `--ebay-max INT`: Max listings per card (default: 3)
+
 ### Data Management
 - `--snapshot-out PATH`: Save price data for reproducibility
 - `--snapshot-in PATH`: Load price data from snapshot
 - `--cache PATH`: Cache file location (default: data/cache.json)
+- `--cache-ttl DURATION`: Cache time-to-live (default: 24h)
 - `--history PATH`: Append top picks here (default: data/targets.csv)
-- `--with-ebay`: Fetch current eBay listings (requires EBAY_APP_ID)
-- `--ebay-max INT`: Max listings per card (default: 3)
-- `--with-volatility`: Include 30-day price volatility data
 
-### Phase 3: Monitoring & Alerts
+### Monitoring & Alerts
 - `--compare-snapshots PATH1,PATH2`: Compare two snapshots for price alerts
 - `--alert-threshold-pct FLOAT`: Alert threshold for percentage change (default: 10.0)
 - `--alert-threshold-usd FLOAT`: Alert threshold for dollar change (default: 5.0)
+- `--alert-csv PATH`: Export alerts to CSV file
+
+### Server Options
+- `--port INT`: Web server port (default: 8080)
+- `--auto-open`: Auto-open browser on server start
 
 ### Utility
 - `--list-sets`: List all available sets and exit
+- `--verbose`: Enable verbose logging
+- `--debug`: Enable debug mode
 
 ## Output Format
 
@@ -222,13 +277,15 @@ Pikachu ex,238,$85.00,$125.00,15.3%,"Investment: $135.00, Net: $108.75"
 |-----|----------|---------|---------|
 | PriceCharting | ✅ Yes | Graded card prices | [pricecharting.com/api](https://www.pricecharting.com/api) |
 | Pokemon TCG | ❌ Optional | Card data (works without key) | [pokemontcg.io](https://pokemontcg.io) |
-| eBay Finding | ❌ Optional | Live eBay listings | [docs/EBAY_SETUP_GUIDE.md](docs/EBAY_SETUP_GUIDE.md) |
+| eBay Finding | ❌ Optional | Live eBay listings | Developer account required |
+| GameStop | ❌ Optional | Trade-in values (web scraping) | No API - uses web scraping |
+| Pokemon Price Tracker | ❌ Optional | Sales transaction data | API subscription |
+| PSA Population | ❌ Optional | Population reports | Future implementation |
 
-### eBay Integration
-The tool integrates with eBay Finding API for live market data:
-- **Setup**: See [docs/EBAY_SETUP_GUIDE.md](docs/EBAY_SETUP_GUIDE.md)
-- **Optional**: Tool works fully without eBay integration
-- **Rate Limits**: Free tier provides 5,000 calls/day
+### Integration Options
+- **Web Scraping**: GameStop integration uses web scraping (may break if site changes)
+- **Data Fusion**: Automatically combines available sources for best accuracy
+- **Graceful Degradation**: Tool works with only PriceCharting API
 
 ## Grading Economics
 
@@ -247,16 +304,28 @@ Break-Even Price = Total Investment / (1 - Selling Fee %)
 
 ```
 pkmgradegap/
-├── cmd/pkmgradegap/main.go      # CLI interface
+├── cmd/pkmgradegap/
+│   ├── main.go                  # CLI interface
+│   └── server.go                 # Web server implementation
 ├── internal/
-│   ├── analysis/analysis.go     # Scoring and reporting logic
-│   ├── cache/cache.go           # Local caching system
-│   ├── cards/poketcgio.go       # Pokemon TCG API client
-│   ├── prices/pricechart.go     # PriceCharting API client
-│   └── model/types.go           # Data structures
+│   ├── analysis/                 # Scoring and reporting logic
+│   ├── cache/                    # Multi-layer caching system
+│   ├── cards/                    # Pokemon TCG API client
+│   ├── prices/                   # PriceCharting API client
+│   ├── gamestop/                 # GameStop integration
+│   ├── ebay/                     # eBay Finding API
+│   ├── population/               # PSA population data
+│   ├── sales/                    # Sales transaction data
+│   ├── fusion/                   # Multi-source data fusion
+│   ├── monitoring/               # Alerts and analysis
+│   ├── volatility/               # Price volatility tracking
+│   └── model/                    # Data structures
+├── scripts/
+│   ├── load_test.go              # Performance testing
+│   └── run_load_test.sh          # Test runner
+├── web/                          # Web interface assets
 ├── data/                         # Cache and history files
-├── go.mod
-└── README.md
+└── docs/                         # Documentation
 ```
 
 ## Tips for Finding PSA 10 Candidates
@@ -274,6 +343,100 @@ pkmgradegap/
 - **Market timing**: Doesn't account for price volatility during grading period
 - **Rate limits**: Free tier limited to 20,000 requests/day for Pokemon TCG API
 
+## eBay Listing Manager
+
+The eBay Listing Manager provides a comprehensive web interface for managing your eBay Pokemon card listings with intelligent repricing suggestions.
+
+### Features
+
+- **OAuth Authentication**: Secure connection to your eBay seller account
+- **Bulk Listing Management**: View and manage all your active listings
+- **Intelligent Repricing**: AI-driven price suggestions based on:
+  - Current market prices from TCGPlayer and PriceCharting
+  - Competitor analysis from active eBay listings
+  - Sales velocity and demand indicators
+  - Population scarcity data
+  - Days on market (staleness detection)
+- **Confidence Scoring**: Each suggestion includes a confidence percentage
+- **Batch Operations**: Apply price changes to multiple listings at once
+- **Performance Dashboard**: Track views, watchers, and sales metrics
+- **Export Functionality**: Download listing data and suggestions as CSV
+
+### Setup
+
+1. **Register an eBay Developer Account**:
+   - Go to https://developer.ebay.com
+   - Create an application for the Production environment
+   - Select "Authorization Code Grant" as the auth type
+
+2. **Configure Environment Variables**:
+```bash
+# Required for eBay Listing Manager
+export EBAY_CLIENT_ID="your_app_id"          # eBay Application ID (OAuth Client ID)
+export EBAY_CLIENT_SECRET="your_cert_id"     # eBay Certificate ID (OAuth Secret)
+export EBAY_REDIRECT_URI="http://localhost:8080/api/ebay/callback"  # OAuth callback URL
+export EBAY_SANDBOX_MODE="false"             # Use "true" for testing with sandbox
+
+# Also needed for Trading API calls
+export EBAY_APP_ID="your_app_id"             # Same as EBAY_CLIENT_ID (for Trading API headers)
+```
+
+**Important Notes**:
+- You need **both** OAuth credentials (for authentication) AND a Trading API App ID
+- The `EBAY_APP_ID` should be the same value as `EBAY_CLIENT_ID`
+- For production, ensure `EBAY_SANDBOX_MODE="false"`
+- The redirect URI must exactly match what's configured in your eBay app
+
+3. **Access the Interface**:
+```bash
+# Start the server
+./pkmgradegap server --port 8080
+
+# Open browser to:
+# http://localhost:8080/ebay
+```
+
+### Usage Workflow
+
+1. **Connect to eBay**: Click "Connect to eBay" and authorize the application
+2. **Sync Listings**: Fetch your active Pokemon card listings
+3. **Analyze Prices**: Click "Analyze Prices" to generate repricing suggestions
+4. **Review Suggestions**:
+   - **DECREASE**: Price is above market, reducing recommended
+   - **INCREASE**: Price is below market, can increase
+   - **HOLD**: Price is optimal
+5. **Apply Changes**: Select listings and apply suggested prices in bulk
+
+### Price Suggestion Algorithm
+
+The repricing engine considers multiple factors:
+
+- **Competition Level**: Number of similar active listings
+- **Market Prices**: TCGPlayer and PriceCharting reference prices
+- **Days Active**: Penalizes stale listings (>30 days)
+- **Engagement Rate**: Views-to-watch ratio indicates demand
+- **Recent Sales**: Actual selling prices from completed listings
+- **Population Rarity**: PSA population data affects pricing power
+- **Market Trends**: Bullish/bearish market detection
+
+### API Endpoints
+
+```bash
+# OAuth Flow
+GET  /api/ebay/auth              # Initiate OAuth
+GET  /api/ebay/callback          # OAuth callback
+
+# Listing Management
+GET  /api/ebay/listings          # Get user's listings
+PUT  /api/ebay/listings/:id      # Update single listing
+POST /api/ebay/analyze           # Generate price suggestions
+POST /api/ebay/reprice           # Bulk price updates
+
+# Analytics
+GET  /api/ebay/dashboard         # Overview statistics
+GET  /api/ebay/competitors/:id  # Competitor analysis
+```
+
 ## Testing
 
 Run the test suite to verify functionality:
@@ -286,10 +449,17 @@ go test ./...
 go test -cover ./...
 
 # Test specific modules
-go test ./internal/ebay/
+go test ./internal/gamestop/
+go test ./internal/fusion/
+go test ./internal/monitoring/
 
-# Test integration with main CLI
-go test ./cmd/pkmgradegap/
+# Integration tests
+go test ./internal/integration/
+
+# Load testing
+./scripts/run_load_test.sh
+# Or with custom parameters
+go run scripts/load_test.go -users 50 -duration 60s
 ```
 
 ## Contributing

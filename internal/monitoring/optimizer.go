@@ -39,7 +39,7 @@ type SubmissionBatch struct {
 // SubmissionCard represents a card to be submitted for grading
 type SubmissionCard struct {
 	Card          model.Card
-	RawUSD   float64
+	RawUSD        float64
 	PSA10Price    float64
 	PSA9Price     float64
 	ExpectedGrade float64
@@ -92,10 +92,12 @@ func (bo *BulkOptimizer) OptimizeSubmission(cards []SubmissionCard) []Submission
 
 	// Calculate profitability for each batch
 	var result []SubmissionBatch
-	for _, batch := range batches {
+	for serviceName, batch := range batches {
 		// Skip batches that don't meet minimum card requirements
 		if len(batch.Cards) < batch.ServiceLevel.MinCards {
 			// Try to combine with next service level down
+			// fmt.Printf("Skipping %s: %d cards < %d minimum\n", serviceName, len(batch.Cards), batch.ServiceLevel.MinCards)
+			_ = serviceName // avoid unused variable warning
 			continue
 		}
 

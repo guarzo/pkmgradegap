@@ -10,21 +10,21 @@ func TestOptimizeSubmission(t *testing.T) {
 	cards := []SubmissionCard{
 		{
 			Card:          model.Card{Name: "Low Value Card", Number: "001"},
-			RawUSD:   5.00,
+			RawUSD:        5.00,
 			PSA10Price:    150.00, // Under Value threshold
 			ExpectedGrade: 9.5,
 			ExpectedValue: 120.00,
 		},
 		{
 			Card:          model.Card{Name: "High Value Card", Number: "002"},
-			RawUSD:   50.00,
+			RawUSD:        50.00,
 			PSA10Price:    800.00, // Over Value threshold
 			ExpectedGrade: 9.7,
 			ExpectedValue: 650.00,
 		},
 		{
 			Card:          model.Card{Name: "Medium Value Card", Number: "003"},
-			RawUSD:   20.00,
+			RawUSD:        20.00,
 			PSA10Price:    300.00, // Value Plus threshold
 			ExpectedGrade: 9.3,
 			ExpectedValue: 250.00,

@@ -13,12 +13,14 @@ import (
 )
 
 // PSAAPIProvider implements population data access through PSA's API
+// Falls back to web scraping when API is not available
 type PSAAPIProvider struct {
 	apiKey      string
 	baseURL     string
 	client      *http.Client
 	rateLimiter RateLimiter
 	cache       Cache
+	scraper     *PSAScraper // Fallback web scraper
 }
 
 // PSAAPIResponse represents the structure of PSA API responses
@@ -65,7 +67,7 @@ type PSASpec struct {
 	SetName     string `json:"setName"`
 }
 
-// NewPSAAPIProvider creates a new PSA API provider
+// NewPSAAPIProvider creates a new PSA API provider with web scraper fallback
 func NewPSAAPIProvider(apiKey string, rateLimiter RateLimiter, cache Cache) *PSAAPIProvider {
 	return &PSAAPIProvider{
 		apiKey:      apiKey,
@@ -73,6 +75,7 @@ func NewPSAAPIProvider(apiKey string, rateLimiter RateLimiter, cache Cache) *PSA
 		client:      &http.Client{Timeout: 30 * time.Second},
 		rateLimiter: rateLimiter,
 		cache:       cache,
+		scraper:     NewPSAScraper(cache), // Pass cache directly to scraper
 	}
 }
 
@@ -81,11 +84,38 @@ func (p *PSAAPIProvider) Available() bool {
 	return p.apiKey != "" && p.apiKey != "test" && p.apiKey != "mock"
 }
 
+// GetProviderName returns the name of the provider
+func (p *PSAAPIProvider) GetProviderName() string {
+	return "PSA API"
+}
+
+// IsMockMode returns false since this is a real provider
+func (p *PSAAPIProvider) IsMockMode() bool {
+	return false
+}
+
 // LookupPopulation retrieves population data for a specific card
 func (p *PSAAPIProvider) LookupPopulation(ctx context.Context, card model.Card) (*PopulationData, error) {
-	if !p.Available() {
-		return nil, fmt.Errorf("PSA API provider not available")
+	// Try API first if available
+	if p.Available() {
+		popData, err := p.lookupViaAPI(ctx, card)
+		if err == nil && popData != nil {
+			return popData, nil
+		}
+		// Log API failure but continue to scraper
+		fmt.Printf("PSA API lookup failed, falling back to scraper: %v\n", err)
 	}
+
+	// Fall back to web scraping
+	if p.scraper != nil {
+		return p.lookupViaScraper(ctx, card)
+	}
+
+	return nil, fmt.Errorf("PSA data not available (no API key and scraper disabled)")
+}
+
+// lookupViaAPI uses the PSA API to get population data
+func (p *PSAAPIProvider) lookupViaAPI(ctx context.Context, card model.Card) (*PopulationData, error) {
 
 	// Check cache first
 	cacheKey := fmt.Sprintf("psa_api_%s_%s_%s",
@@ -121,6 +151,46 @@ func (p *PSAAPIProvider) LookupPopulation(ctx context.Context, card model.Card) 
 	}
 
 	return popData, nil
+}
+
+// lookupViaScraper uses web scraping to get population data
+func (p *PSAAPIProvider) lookupViaScraper(ctx context.Context, card model.Card) (*PopulationData, error) {
+	if p.scraper == nil {
+		return nil, fmt.Errorf("scraper not initialized")
+	}
+
+	// Use scraper to get population data
+	psaPop, err := p.scraper.GetCardPopulation(ctx, card.SetName, card.Number, card.Name)
+	if err != nil {
+		return nil, fmt.Errorf("scraper failed: %w", err)
+	}
+
+	if psaPop == nil {
+		return nil, fmt.Errorf("no population data found")
+	}
+
+	// Convert model.PSAPopulation to PopulationData
+	scarcity := calculateScarcity(psaPop.PSA10)
+
+	// Build grade population map
+	gradePopulation := make(map[string]int)
+	gradePopulation["PSA 10"] = psaPop.PSA10
+	gradePopulation["PSA 9"] = psaPop.PSA9
+	gradePopulation["PSA 8"] = psaPop.PSA8
+
+	return &PopulationData{
+		Card:            card,
+		SetName:         card.SetName,
+		CardNumber:      card.Number,
+		LastUpdated:     psaPop.LastUpdated,
+		GradePopulation: gradePopulation,
+		TotalGraded:     psaPop.TotalGraded,
+		PSA10Population: psaPop.PSA10,
+		PSA9Population:  psaPop.PSA9,
+		PSA8Population:  psaPop.PSA8,
+		ScarcityLevel:   scarcity,
+		PopulationTrend: "STABLE", // Would need historical data
+	}, nil
 }
 
 // BatchLookupPopulation retrieves population data for multiple cards

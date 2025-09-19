@@ -1,0 +1,52 @@
+[
+  {
+    "id": "rsv10pt5",
+    "name": "White Flare",
+    "cardCount": 73,
+    "topScore": 1386.705,
+    "avgRawPrice": 28.216849315068487,
+    "avgPSA10Price": 145.98794520547943,
+    "lastUpdated": "2025-09-19T04:56:46.470594779-04:00",
+    "opportunityCount": 50
+  },
+  {
+    "id": "zsv10pt5",
+    "name": "Black Bolt",
+    "cardCount": 72,
+    "topScore": 1299.64,
+    "avgRawPrice": 31.524027777777764,
+    "avgPSA10Price": 154.9213888888888,
+    "lastUpdated": "2025-09-19T05:04:48.420669703-04:00",
+    "opportunityCount": 49
+  },
+  {
+    "id": "sv10",
+    "name": "Destined Rivals",
+    "cardCount": 44,
+    "topScore": 1288.41,
+    "avgRawPrice": 45.52136363636361,
+    "avgPSA10Price": 173.9515909090909,
+    "lastUpdated": "2025-09-19T05:19:44.034181646-04:00",
+    "opportunityCount": 32
+  },
+  {
+    "id": "sv9",
+    "name": "Journey Together",
+    "cardCount": 17,
+    "topScore": 305.22,
+    "avgRawPrice": 31.362941176470592,
+    "avgPSA10Price": 132.8411764705882,
+    "lastUpdated": "2025-09-19T05:31:39.656726535-04:00",
+    "opportunityCount": 11
+  },
+  {
+    "id": "sv8pt5",
+    "name": "Prismatic Evolutions",
+    "cardCount": 40,
+    "topScore": 2287.27,
+    "avgRawPrice": 93.90799999999997,
+    "avgPSA10Price": 307.2655,
+    "lastUpdated": "2025-09-19T05:41:15.570108692-04:00",
+    "opportunityCount": 37
+  }
+]

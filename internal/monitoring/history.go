@@ -13,15 +13,15 @@ import (
 
 // HistoryEntry represents a single entry in the history CSV
 type HistoryEntry struct {
-	Timestamp   time.Time
-	Card        string
-	Number      string
-	Set         string
-	RawUSD float64
-	PSA10USD    float64
-	DeltaUSD    float64
-	Score       float64
-	Notes       string
+	Timestamp time.Time
+	Card      string
+	Number    string
+	Set       string
+	RawUSD    float64
+	PSA10USD  float64
+	DeltaUSD  float64
+	Score     float64
+	Notes     string
 }
 
 // HistoryAnalyzer analyzes historical tracking data
@@ -324,15 +324,15 @@ func (ha *HistoryAnalyzer) parseHistoryEntry(record []string) (HistoryEntry, err
 	}
 
 	return HistoryEntry{
-		Timestamp:   timestamp,
-		Card:        record[1],
-		Number:      record[2],
-		Set:         record[3],
-		RawUSD: rawPrice,
-		PSA10USD:    psa10Price,
-		DeltaUSD:    delta,
-		Score:       score,
-		Notes:       notes,
+		Timestamp: timestamp,
+		Card:      record[1],
+		Number:    record[2],
+		Set:       record[3],
+		RawUSD:    rawPrice,
+		PSA10USD:  psa10Price,
+		DeltaUSD:  delta,
+		Score:     score,
+		Notes:     notes,
 	}, nil
 }
 

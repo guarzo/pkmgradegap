@@ -29,11 +29,17 @@ export PRICECHARTING_TOKEN="your_token_here"
 # Optional: Get Pokemon TCG API key from https://pokemontcg.io
 export POKEMONTCGIO_API_KEY="your_key_here"
 
-# Optional: Set up eBay App ID (see docs/EBAY_SETUP_GUIDE.md)
+# Optional: eBay App ID for live listings
 export EBAY_APP_ID="your_app_id_here"
 
-# NEW: Pokemon Price Tracker API for sales data
+# GameStop integration uses web scraping (no API key needed)
+# Warning: Web scraping may break if GameStop changes their website
+
+# Optional: Pokemon Price Tracker for sales data
 export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
+
+# Optional: PSA Population API (future)
+export PSA_POPULATION_API_KEY="your_key_here"
 ```
 
 **Quick Test:**
@@ -43,9 +49,43 @@ export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 
 # Analyze a recent set
 ./pkmgradegap --set "Surging Sparks"
+
+# Start web interface
+./pkmgradegap server --auto-open
 ```
 
-### 2. Basic Analysis Workflow
+### 2. Web Interface (NEW)
+
+The web interface provides a user-friendly way to analyze cards:
+
+**Starting the Server:**
+```bash
+# Default port 8080
+./pkmgradegap --web
+
+# Custom port
+./pkmgradegap --web --port 9090
+```
+
+**Features:**
+- **Interactive Dashboard**: Real-time analysis with progress tracking
+- **Chart.js Visualizations**: Price trends, ROI analysis, population charts
+- **Advanced Filtering**: Search and filter results across all columns
+- **Batch Analysis**: Analyze multiple sets simultaneously
+- **Export Options**: CSV, JSON, and PDF export
+- **Theme Support**: Auto/Light/Dark modes
+- **Live Updates**: Server-sent events for real-time progress
+
+**API Endpoints:**
+- `GET /api/health` - System health and provider status
+- `GET /api/sets` - List available sets
+- `POST /api/analyze` - Start analysis job
+- `GET /api/jobs/{id}` - Get job status
+- `GET /api/jobs/{id}/stream` - SSE stream for updates
+- `DELETE /api/cache` - Clear cache
+- `GET /api/metrics` - Prometheus metrics
+
+### 3. Basic Analysis Workflow
 
 **Step 1: Find Current Opportunities**
 ```bash
@@ -53,7 +93,12 @@ export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 ./pkmgradegap --set "Surging Sparks" --top 10
 
 # Enhanced with all data sources (recommended)
-./pkmgradegap --set "Surging Sparks" --with-pop --with-sales --top 10
+./pkmgradegap --set "Surging Sparks" \
+  --with-pop \       # Population data
+  --with-sales \     # Sales history
+  --with-gamestop \  # Trade-in values
+  --fusion-mode \    # Multi-source fusion
+  --top 10
 ```
 
 **Step 2: Save Results for Later**
@@ -71,52 +116,50 @@ export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 
 # Compare snapshots
 ./pkmgradegap --analysis alerts \
-  --compare-snapshots surging_sparks_20250916.json,surging_sparks_20250930.json
+  --compare-snapshots surging_sparks_20250916.json,surging_sparks_20250930.json \
+  --alert-csv alerts_report.csv
 ```
 
-### 3. Advanced Features
+## New Features
 
-**Cost Optimization:**
-```bash
-./pkmgradegap --set "Surging Sparks" \
-  --grading-cost 20 \        # Lower cost tier
-  --shipping 15 \            # Bulk shipping discount
-  --fee-pct 0.10 \          # Lower platform fees
-  --japanese-weight 1.2      # Bonus for Japanese cards
-```
-
-**Market Validation:**
-```bash
-# Include live eBay listings for price verification
-./pkmgradegap --set "Surging Sparks" \
-  --with-ebay \
-  --ebay-max 5 \
-  --top 15
-```
-
-**Volatility Analysis:**
-```bash
-# Track price volatility for timing decisions
-./pkmgradegap --set "Surging Sparks" \
-  --with-volatility \
-  --why                     # Show detailed scoring breakdown
-```
-
-## New Features (Sprint 3A)
-
-### Sales Data Integration
-**What:** Real sales transaction data from eBay and other marketplaces
-**Why:** More accurate than listing prices; shows what buyers actually pay
-**How:** Enable with `--with-sales` flag
+### GameStop Integration
+**What:** Trade-in values and buylist pricing from GameStop
+**Why:** Identify arbitrage opportunities between GameStop and graded market
+**How:** Enable with `--with-gamestop` flag
 
 ```bash
-# Use actual sales data for pricing
-./pkmgradegap --set "Surging Sparks" --with-sales --top 10
+# Use GameStop web scraper
+./pkmgradegap --set "Surging Sparks" --with-gamestop
+
+# Note: No API key required, but may fail if website changes
 ```
+
+**GameStop-Specific Analysis:**
+- Trade-in values compared to raw prices
+- Buylist opportunities for graded cards
+- Arbitrage potential scoring
+- Store credit vs cash calculations
+
+### Data Fusion System
+**What:** Combines prices from multiple sources with confidence scoring
+**Why:** More accurate pricing by reconciling different data sources
+**How:** Available in web interface mode only
+
+```bash
+# Fusion available in web mode
+./pkmgradegap --web
+# Then use the web interface to enable fusion analysis
+```
+
+**Fusion Features:**
+- Weighted averaging based on source reliability
+- Confidence intervals for price estimates
+- Conflict resolution for discrepancies
+- Source type differentiation (SALE vs LISTING vs ESTIMATE)
 
 ### Population Data Integration
 **What:** PSA grading population statistics
-**Why:** Low-population cards are more valuable; affects investment decisions
+**Why:** Low-population cards are more valuable
 **How:** Enable with `--with-pop` flag
 
 ```bash
@@ -124,19 +167,31 @@ export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 ./pkmgradegap --set "Surging Sparks" --with-pop --top 10
 ```
 
-### Combined Data Sources
-**What:** Use all available data for maximum accuracy
-**Why:** Better investment decisions with complete information
-**How:** Combine all flags
+**Scarcity Bonuses:**
+- 15 points: ≤10 PSA10 population
+- 10 points: ≤50 PSA10 population
+- 5 points: ≤100 PSA10 population
+- 2 points: ≤500 PSA10 population
+
+### Sales Data Integration
+**What:** Real sales transaction data from marketplaces
+**Why:** Shows actual selling prices, not just listings
+**How:** Enable with `--with-sales` flag
 
 ```bash
-# Maximum accuracy mode
+# Use actual sales data for pricing
+./pkmgradegap --set "Surging Sparks" --with-sales --top 10
+```
+
+### Advanced Caching
+**What:** Multi-layer caching with predictive loading
+**Why:** Faster performance and reduced API calls
+**How:** Automatic with configurable TTL
+
+```bash
+# Custom cache location
 ./pkmgradegap --set "Surging Sparks" \
-  --with-pop \       # Population data
-  --with-sales \     # Sales data
-  --with-ebay \      # Current listings
-  --with-volatility \ # Price stability
-  --top 20
+  --cache data/custom_cache.json
 ```
 
 ## Analysis Modes Explained
@@ -144,253 +199,250 @@ export POKEMON_PRICE_TRACKER_API_KEY="your_key_here"
 ### Rank Mode (Default)
 **Best for:** Finding profitable grading opportunities
 
-**Output:** Scored list of cards ranked by profitability
+**Scoring Factors:**
+- Base profit margin (PSA10 - Raw - Costs)
+- Premium lift bonus (steep PSA10 premiums)
+- Japanese card multiplier
+- Population scarcity bonus
+- Volatility penalty
+- GameStop trade bonus (if applicable)
 
-**Key Metrics:**
-- **Score:** Combined profitability metric (higher = better)
-- **BreakEvenUSD:** Minimum sale price needed for profit
-- **CostUSD:** Total investment including all fees
-
-**When to use:** Daily analysis for new grading opportunities
-
-**Example:**
 ```bash
-./pkmgradegap --set "Surging Sparks" --analysis rank
+./pkmgradegap --set "Surging Sparks" --analysis rank --why
 ```
 
-### Raw vs PSA 10 Analysis
-**Best for:** Simple price gap identification
+### Market Timing
+**Best for:** Seasonal buying/selling decisions
 
-**Output:** Basic price differences without cost analysis
+**Output:** Recommendations with confidence scores
 
-**When to use:** Quick market research or data collection
-
-**Example:**
 ```bash
-./pkmgradegap --set "Surging Sparks" --analysis raw-vs-psa10
-```
-
-### Crossgrade Analysis
-**Best for:** Upgrading existing graded cards
-
-**Output:** ROI for sending CGC/BGS 9.5 cards to PSA for PSA 10
-
-**When to use:** You have graded cards to potentially upgrade
-
-**Example:**
-```bash
-./pkmgradegap --set "Surging Sparks" --analysis crossgrade
-```
-
-### Price Alerts
-**Best for:** Monitoring market changes
-
-**Output:** Alert report showing significant price movements
-
-**When to use:** Regular monitoring of your tracked cards
-
-**Example:**
-```bash
-./pkmgradegap --analysis alerts \
-  --compare-snapshots old.json,new.json \
-  --alert-threshold-pct 15
+./pkmgradegap --set "Surging Sparks" --analysis market-timing
 ```
 
 ### Bulk Optimization
 **Best for:** PSA submission planning
 
-**Output:** Optimized batches for bulk submission
+**Features:**
+- Service level recommendations (Regular/Express/Super Express)
+- Batch optimization for volume discounts
+- Submission timing suggestions
 
-**When to use:** Planning large grading submissions
-
-**Example:**
 ```bash
 ./pkmgradegap --set "Surging Sparks" --analysis bulk-optimize
 ```
 
+### Price Alerts
+**Best for:** Monitoring market changes
+
+**Alert Types:**
+- Price drops (buying opportunities)
+- Price spikes (selling signals)
+- Volatility alerts (risk warnings)
+- New opportunities (newly profitable cards)
+
+```bash
+./pkmgradegap --analysis alerts \
+  --compare-snapshots old.json,new.json \
+  --alert-threshold-pct 15 \
+  --alert-csv alerts.csv
+```
+
 ## Real-World Examples
 
-### Finding Your First Grading Opportunity
+### GameStop Arbitrage Strategy
 
-**Scenario:** New to grading, want to start with low-risk opportunities
+**Scenario:** Find cards to buy from GameStop and grade for profit
 
-**Strategy:**
 ```bash
-# Look for recent sets with good print quality
+# Identify GameStop arbitrage opportunities
 ./pkmgradegap --set "Surging Sparks" \
-  --max-age-years 2 \
-  --min-raw-usd 20 \        # Higher starting price = lower risk
-  --min-delta-usd 40 \      # Good profit margin
-  --top 5                   # Focus on best opportunities
+  --with-gamestop \
+  --analysis rank \
+  --min-delta-usd 30 \
+  --why
 ```
 
-**Analysis:**
-1. Focus on cards with **Score > 30** for strong opportunities
-2. Check **BreakEvenUSD** - ensure it's reasonable for the card
-3. Verify with **--with-ebay** to see actual market listings
-4. Start with 1-2 cards to test the process
+**Look for:**
+- Cards where GameStop trade-in < raw market price
+- High PSA10 premiums over GameStop buylist
+- Store credit opportunities (usually 20% bonus)
 
-### Setting Up Price Monitoring
+### Multi-Source Validation
 
-**Scenario:** Track opportunities over time for optimal timing
+**Scenario:** Validate opportunities with all available data
 
-**Monthly Routine:**
 ```bash
-# Take monthly snapshots
+# Maximum accuracy mode (CLI)
 ./pkmgradegap --set "Surging Sparks" \
-  --snapshot-out snapshots/surging_sparks_$(date +%Y%m).json \
-  --history data/tracking.csv
+  --with-pop \        # Population data
+  --with-sales \      # Sales history
+  --with-gamestop \   # Trade values
+  --with-ebay \       # Current listings
+  --with-volatility \ # Price stability
+  --why \            # Show scoring breakdown
+  --top 20
 
-# Compare with previous month
-./pkmgradegap --analysis alerts \
-  --compare-snapshots snapshots/surging_sparks_202409.json,snapshots/surging_sparks_202410.json \
-  --alert-threshold-pct 10 \
-  --alert-threshold-usd 5
+# For data fusion, use web interface:
+./pkmgradegap --web
 ```
 
-**Interpretation:**
-- **Price Drops:** Good buying opportunities
-- **Price Spikes:** Consider selling graded inventory
-- **New Opportunities:** Cards that weren't profitable before
+### Web Interface Workflow
 
-### Optimizing Bulk Submissions
+**Scenario:** Using the web interface for analysis
 
-**Scenario:** Submit 20+ cards to PSA for volume discounts
-
-**Planning Process:**
+1. **Start Server:**
 ```bash
-# Gather candidates from multiple sets
-./pkmgradegap --set "Surging Sparks" --snapshot-out candidates_ss.json
-./pkmgradegap --set "Stellar Crown" --snapshot-out candidates_sc.json
-
-# Combine and optimize
-./pkmgradegap --analysis bulk-optimize \
-  --grading-cost 18 \       # Bulk pricing
-  --shipping 25             # Single shipment cost
+./pkmgradegap --web
 ```
 
-**Optimization Tips:**
-1. Mix high-value and medium-value cards
-2. Include some Japanese cards for quality bonus
-3. Avoid cards with thin PSA 9/10 premiums
-4. Consider market timing recommendations
+2. **In Browser:**
+- Select sets to analyze
+- Configure analysis parameters
+- Enable data sources (GameStop, eBay, etc.)
+- Start analysis
+
+3. **Review Results:**
+- Sort by different columns
+- Use filters to find specific cards
+- View charts for visual analysis
+- Export results in preferred format
+
+4. **Batch Analysis:**
+- Select multiple sets
+- Choose combined or separate view
+- Export all results at once
+
+## Performance Optimization
+
+### Load Testing
+
+Test server performance before deployment:
+
+```bash
+# Note: Load testing scripts not yet implemented
+# Monitor performance through web interface metrics at /api/metrics
+curl http://localhost:8080/api/metrics
+```
+
+**Performance Tips:**
+- Use caching for frequently accessed data
+- Enable compression for API responses
+- Implement virtual scrolling for large datasets
+- Use SSE batching for real-time updates
+
+### Caching Strategy
+
+```bash
+# Pre-warm cache for common sets
+for set in "Surging Sparks" "Stellar Crown" "Twilight Masquerade"; do
+  ./pkmgradegap --set "$set" --snapshot-out cache/"$set".json
+done
+
+# Use cached data for faster analysis
+./pkmgradegap --snapshot-in cache/"Surging Sparks".json
+```
 
 ## Troubleshooting
 
-### Common Issues
+### GameStop Integration Issues
 
-**"set not found" Error:**
+**No GameStop data returned:**
 ```bash
-# List available sets first
-./pkmgradegap --list-sets | grep -i "partial_name"
+# GameStop uses web scraping - check if their website structure changed
+./pkmgradegap --set "Surging Sparks" --with-gamestop --verbose
 
-# Use exact set name
-./pkmgradegap --set "Sword & Shield"
+# Common causes:
+# - GameStop changed their website HTML structure
+# - Rate limiting/IP blocking
+# - Website temporarily down
 ```
 
-**No Results Returned:**
+### Web Interface Issues
+
+**Server won't start:**
 ```bash
-# Lower the minimum thresholds
+# Check port availability
+lsof -i :8080
+
+# Try different port
+./pkmgradegap server --port 9090
+```
+
+**Slow performance:**
+```bash
+# Enable metrics endpoint
+./pkmgradegap server --port 8080
+
+# Check metrics
+curl http://localhost:8080/api/metrics
+```
+
+### Data Fusion Conflicts
+
+**Price discrepancies:**
+```bash
+# View fusion details
 ./pkmgradegap --set "Surging Sparks" \
-  --min-delta-usd 10 \
-  --min-raw-usd 1 \
-  --max-age-years 20
-```
-
-**eBay Integration Not Working:**
-```bash
-# Test with mock mode first
-EBAY_APP_ID="mock" ./pkmgradegap --set "Surging Sparks" --with-ebay
-
-# Check your App ID configuration
-echo $EBAY_APP_ID
-```
-
-**Cache Issues:**
-```bash
-# Clear cache if data seems stale
-rm data/cache.json
-
-# Specify different cache location
-./pkmgradegap --set "Surging Sparks" --cache /tmp/temp_cache.json
-```
-
-### API Configuration
-
-**PriceCharting API Issues:**
-1. Verify token at https://www.pricecharting.com/api
-2. Check rate limits (20,000 requests/day)
-3. Ensure token is properly exported
-
-**Pokemon TCG API Issues:**
-1. Works without key (lower rate limits)
-2. Key improves performance but isn't required
-3. Check https://pokemontcg.io for status
-
-**eBay API Issues:**
-1. Use mock mode for testing: `EBAY_APP_ID="mock"`
-2. See docs/EBAY_SETUP_GUIDE.md for full setup
-3. Free tier provides 5,000 calls/day
-
-### Performance Tips
-
-**Improve Speed:**
-```bash
-# Use cached data when possible
-./pkmgradegap --set "Surging Sparks" --cache data/cache.json
-
-# Load from snapshot for offline analysis
-./pkmgradegap --snapshot-in snapshot.json
-```
-
-**Reduce API Usage:**
-```bash
-# Analyze fewer cards
-./pkmgradegap --set "Surging Sparks" --top 10
-
-# Use longer cache TTL
-# (Cache is automatically managed with reasonable TTLs)
-```
-
-**Batch Operations:**
-```bash
-# Process multiple sets efficiently
-for set in "Surging Sparks" "Stellar Crown" "Twilight Masquerade"; do
-  ./pkmgradegap --set "$set" --snapshot-out "$(echo $set | tr ' ' '_')_snapshot.json"
-done
+  --fusion-mode \
+  --verbose \
+  --debug
 ```
 
 ## Pro Tips
 
 ### Finding the Best Opportunities
 
-1. **Recent Sets:** Cards from sets released in the last 2 years typically grade better
-2. **Japanese Cards:** Often have superior print quality and centering
-3. **Low Population:** Check PSA pop reports manually for scarce cards
-4. **Market Timing:** Buy during off-season (spring/summer), sell during holidays
-5. **Condition Matters:** Only grade Near Mint or better cards
+1. **GameStop Arbitrage:** Look for undervalued cards at GameStop
+2. **Population Scarcity:** Focus on low-pop cards with --with-pop
+3. **Data Fusion:** Use --fusion-mode for most accurate pricing
+4. **Volatility Check:** Avoid highly volatile cards
+5. **Japanese Focus:** Higher centering quality = better grades
 
-### Managing Risk
+### Risk Management
 
-1. **Start Small:** Test with 1-3 cards before bulk submissions
-2. **Diversify:** Mix different price points and card types
-3. **Track History:** Use --history flag to build long-term data
-4. **Set Budgets:** Use --min-raw-usd and --top to control spending
-5. **Monitor Markets:** Regular price alerts help time buying/selling
+1. **Start Small:** Test with 1-3 cards first
+2. **Diversify Sources:** Don't rely on single data provider
+3. **Monitor Volatility:** Use --with-volatility flag
+4. **Track History:** Build long-term data with --history
+5. **Set Alerts:** Regular monitoring with price alerts
 
 ### Advanced Strategies
 
-1. **Crossgrading:** Upgrade CGC/BGS 9.5 to PSA 10 for premium
-2. **Japanese Focus:** Use --japanese-weight 1.2+ for quality bonus
-3. **Volatility Trading:** Use --with-volatility to time market entries
-4. **Bulk Optimization:** Plan submissions around PSA pricing tiers
-5. **Set Rotation:** Focus on sets 6-18 months old for optimal timing
+1. **GameStop Flips:** Buy underpriced cards, grade, and sell
+2. **Bulk Submissions:** Optimize for PSA volume discounts
+3. **Seasonal Timing:** Use market-timing analysis
+4. **Cross-Source Validation:** Fusion mode for confidence
+5. **Web Dashboard:** Monitor multiple sets in real-time
+
+## API Configuration Details
+
+### Required: PriceCharting
+- Get token: https://www.pricecharting.com/api
+- Rate limit: 20,000 requests/day
+- Coverage: All graded prices
+
+### GameStop (Web Scraping)
+- No API available - uses web scraping
+- May break if website structure changes
+- Provides trade-in and buylist data
+- Rate limited to avoid being blocked
+
+### Optional: Pokemon Price Tracker
+- Subscription required for API access
+- Provides actual sales data
+- Better accuracy than listings
+
+### Optional: eBay
+- Free developer account needed
+- 5,000 calls/day on free tier
+- Live market validation
 
 ## Getting Help
 
-- **Documentation:** Check docs/ directory for detailed guides
-- **Issues:** Report bugs at the project repository
-- **API Status:** Monitor provider status pages for outages
-- **Community:** Share findings and strategies with other users
+- **Documentation:** Check docs/ directory
+- **Web Interface:** Access at http://localhost:8080 (start with `./pkmgradegap --web`)
+- **API Status:** Check /api/health endpoint
+- **Metrics:** Monitor at /api/metrics
 
-Remember: This tool provides analysis, but market conditions, grading outcomes, and timing can vary. Always do additional research before making significant investments.
+Remember: This tool provides analysis based on available data. Market conditions, grading outcomes, and timing can vary. Always do additional research before making investments.

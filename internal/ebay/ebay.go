@@ -3,12 +3,14 @@ package ebay
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -23,8 +25,16 @@ type Listing struct {
 }
 
 type Client struct {
-	appID      string
-	httpClient *http.Client
+	appID       string
+	httpClient  *http.Client
+	rateLimiter *rateLimiter
+}
+
+// Simple rate limiter
+type rateLimiter struct {
+	mu       sync.Mutex
+	lastCall time.Time
+	minDelay time.Duration
 }
 
 // eBay Finding API response structures
@@ -58,7 +68,21 @@ func NewClient(appID string) *Client {
 	return &Client{
 		appID:      appID,
 		httpClient: &http.Client{Timeout: 15 * time.Second},
+		rateLimiter: &rateLimiter{
+			minDelay: 1 * time.Second, // eBay Finding API has 5000 calls/day limit = ~1 call per 17 seconds, but we'll be conservative
+		},
 	}
+}
+
+func (r *rateLimiter) wait() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	timeSinceLastCall := time.Since(r.lastCall)
+	if timeSinceLastCall < r.minDelay {
+		time.Sleep(r.minDelay - timeSinceLastCall)
+	}
+	r.lastCall = time.Now()
 }
 
 func (c *Client) Available() bool {
@@ -69,6 +93,9 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 	if !c.Available() {
 		return nil, fmt.Errorf("eBay app ID not configured")
 	}
+
+	// Apply rate limiting
+	c.rateLimiter.wait()
 
 	// Build a more targeted query
 	query := fmt.Sprintf("pokemon \"%s\" \"%s\" #%s -(graded,slab,psa,bgs,cgc,ace)",
@@ -120,12 +147,38 @@ func (c *Client) SearchRawListings(setName, cardName, number string, max int) ([
 	}
 	defer resp.Body.Close()
 
+	// Read the response body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
+		// Try to parse error response
+		var errorResp struct {
+			ErrorMessage []struct {
+				Error []struct {
+					Message []string `json:"message"`
+				} `json:"error"`
+			} `json:"errorMessage"`
+		}
+
+		if err := json.Unmarshal(bodyBytes, &errorResp); err == nil &&
+			len(errorResp.ErrorMessage) > 0 &&
+			len(errorResp.ErrorMessage[0].Error) > 0 &&
+			len(errorResp.ErrorMessage[0].Error[0].Message) > 0 {
+			errMsg := errorResp.ErrorMessage[0].Error[0].Message[0]
+			if strings.Contains(errMsg, "exceeded the number of times") {
+				return nil, fmt.Errorf("eBay API rate limit exceeded. Please try again later")
+			}
+			return nil, fmt.Errorf("eBay API error: %s", errMsg)
+		}
+
 		return nil, fmt.Errorf("eBay API returned status %d", resp.StatusCode)
 	}
 
 	var ebayResp findingResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ebayResp); err != nil {
+	if err := json.Unmarshal(bodyBytes, &ebayResp); err != nil {
 		return nil, fmt.Errorf("parse eBay response: %w", err)
 	}
 

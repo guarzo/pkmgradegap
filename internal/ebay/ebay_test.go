@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/guarzo/pkmgradegap/internal/testutil"
 )
 
 // MockClient is a test-only implementation
@@ -198,7 +200,7 @@ func TestMockClient_ErrorHandling(t *testing.T) {
 }
 
 func TestClient_IsGradedCard(t *testing.T) {
-	client := NewClient("dummy-key") // Use a dummy key for testing
+	client := NewClient(testutil.GetTestEbayAppID()) // Use test key from environment or default
 
 	tests := []struct {
 		title    string

@@ -20,15 +20,15 @@ type ListingData struct {
 // Listing represents a single GameStop graded card listing
 type Listing struct {
 	Price       float64 `json:"price"`
-	Grade       string  `json:"grade"`        // "PSA 10", "BGS 9.5", etc.
-	Title       string  `json:"title"`        // Full product title
-	URL         string  `json:"url"`          // Product URL
-	SKU         string  `json:"sku"`          // GameStop SKU
-	InStock     bool    `json:"in_stock"`     // Availability status
-	Condition   string  `json:"condition"`    // "New", "Pre-owned", etc.
-	Seller      string  `json:"seller"`       // Always "GameStop" for this provider
-	ImageURL    string  `json:"image_url"`    // Product image
-	Description string  `json:"description"`  // Product description
+	Grade       string  `json:"grade"`       // "PSA 10", "BGS 9.5", etc.
+	Title       string  `json:"title"`       // Full product title
+	URL         string  `json:"url"`         // Product URL
+	SKU         string  `json:"sku"`         // GameStop SKU
+	InStock     bool    `json:"in_stock"`    // Availability status
+	Condition   string  `json:"condition"`   // "New", "Pre-owned", etc.
+	Seller      string  `json:"seller"`      // Always "GameStop" for this provider
+	ImageURL    string  `json:"image_url"`   // Product image
+	Description string  `json:"description"` // Product description
 }
 
 // Provider defines the interface for GameStop listings data
@@ -47,14 +47,17 @@ type Provider interface {
 
 	// GetProviderName returns the name of the provider
 	GetProviderName() string
+
+	// IsMockMode returns true if the provider is running in mock/test mode
+	IsMockMode() bool
 }
 
 // Config holds configuration for GameStop provider
 type Config struct {
 	// Request settings
-	RequestTimeout   time.Duration
-	MaxRetries       int
-	RateLimitPerMin  int
+	RequestTimeout     time.Duration
+	MaxRetries         int
+	RateLimitPerMin    int
 	MaxListingsPerCard int
 
 	// Cache settings
@@ -66,7 +69,7 @@ type Config struct {
 	SearchTimeout    time.Duration
 
 	// Headers and user agent rotation
-	UserAgents []string
+	UserAgents  []string
 	UseRandomUA bool
 
 	// Rate limiting
@@ -94,12 +97,8 @@ func DefaultConfig() Config {
 	}
 }
 
-// Factory creates the appropriate GameStop provider
+// NewProvider creates a GameStop web scraper client
+// Note: This uses web scraping, not an official API
 func NewProvider(config Config) Provider {
 	return NewGameStopClient(config)
-}
-
-// Mock provider for testing without making real requests
-func NewMockProvider() Provider {
-	return &MockProvider{}
 }

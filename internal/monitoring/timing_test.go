@@ -55,9 +55,9 @@ func TestMarketAnalyzer(t *testing.T) {
 			Timestamp: time.Now().Add(-72 * time.Hour),
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
-					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawUSD: 20.00,
-					PSA10Price:  100.00,
+					Card:       model.Card{Name: "Test Card", Number: "001"},
+					RawUSD:     20.00,
+					PSA10Price: 100.00,
 				},
 			},
 		},
@@ -65,9 +65,9 @@ func TestMarketAnalyzer(t *testing.T) {
 			Timestamp: time.Now().Add(-48 * time.Hour),
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
-					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawUSD: 18.00,
-					PSA10Price:  105.00,
+					Card:       model.Card{Name: "Test Card", Number: "001"},
+					RawUSD:     18.00,
+					PSA10Price: 105.00,
 				},
 			},
 		},
@@ -75,9 +75,9 @@ func TestMarketAnalyzer(t *testing.T) {
 			Timestamp: time.Now().Add(-24 * time.Hour),
 			Cards: map[string]*SnapshotCardData{
 				"001-Test Card": {
-					Card:        model.Card{Name: "Test Card", Number: "001"},
-					RawUSD: 16.00,
-					PSA10Price:  110.00,
+					Card:       model.Card{Name: "Test Card", Number: "001"},
+					RawUSD:     16.00,
+					PSA10Price: 110.00,
 				},
 			},
 		},

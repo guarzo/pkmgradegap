@@ -20,7 +20,7 @@ type Snapshot struct {
 // SnapshotCardData contains price data for a card at a point in time
 type SnapshotCardData struct {
 	Card         model.Card `json:"card"`
-	RawUSD  float64    `json:"raw_price_usd"`
+	RawUSD       float64    `json:"raw_price_usd"`
 	PSA10Price   float64    `json:"psa10_price"`
 	PSA9Price    float64    `json:"psa9_price"`
 	Grade95Price float64    `json:"grade95_price"`
@@ -68,7 +68,7 @@ func CreateSnapshotFromRows(setName string, rows []analysis.Row) *Snapshot {
 		key := fmt.Sprintf("%s-%s", row.Card.Number, row.Card.Name)
 		snapshot.Cards[key] = &SnapshotCardData{
 			Card:         row.Card,
-			RawUSD:  row.RawUSD,
+			RawUSD:       row.RawUSD,
 			PSA10Price:   row.Grades.PSA10,
 			PSA9Price:    row.Grades.Grade9,
 			Grade95Price: row.Grades.Grade95,

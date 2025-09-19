@@ -213,8 +213,8 @@ func TestNewPokeTCGIO_Comprehensive(t *testing.T) {
 				t.Error("expected non-nil HTTP client")
 			}
 
-			if p.client.Timeout != 30*time.Second {
-				t.Errorf("expected 30s timeout, got %v", p.client.Timeout)
+			if p.client.Timeout != 60*time.Second {
+				t.Errorf("expected 60s timeout, got %v", p.client.Timeout)
 			}
 		})
 	}

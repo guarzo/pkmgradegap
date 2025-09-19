@@ -12,11 +12,10 @@ import (
 	"time"
 )
 
-// MultiLayerCache implements a three-tier caching system
+// MultiLayerCache implements a two-tier caching system
 type MultiLayerCache struct {
 	l1 *MemoryCache // Hot data - fast access
 	l2 *DiskCache   // Warm data - persistent
-	l3 *RemoteCache // Cold data - network storage (optional)
 
 	config    CacheConfig
 	stats     *CacheStats
@@ -30,19 +29,9 @@ type CacheConfig struct {
 	L1TTL         time.Duration // TTL for L1 cache
 	L2MaxSize     int64         // Max size in bytes for disk cache
 	L2TTL         time.Duration // TTL for L2 cache
-	L3TTL         time.Duration // TTL for L3 cache
 	L2Path        string        // Path for disk cache
-	L3Config      *RemoteConfig // Remote cache configuration
 	EnablePredict bool          // Enable predictive caching
 	CompressL2    bool          // Compress L2 cache entries
-}
-
-// RemoteConfig holds remote cache configuration
-type RemoteConfig struct {
-	Provider string // "s3", "redis", etc.
-	Endpoint string
-	Bucket   string
-	Prefix   string
 }
 
 // CacheStats tracks cache performance metrics
@@ -53,14 +42,11 @@ type CacheStats struct {
 	L2Hits         int64     `json:"l2_hits"`
 	L2Misses       int64     `json:"l2_misses"`
 	L2HitRate      float64   `json:"l2_hit_rate"`
-	L3Hits         int64     `json:"l3_hits"`
-	L3Misses       int64     `json:"l3_misses"`
-	L3HitRate      float64   `json:"l3_hit_rate"`
 	OverallHitRate float64   `json:"overall_hit_rate"`
 	Evictions      int64     `json:"evictions"`
 	Prefetches     int64     `json:"prefetches"`
 	StartTime      time.Time `json:"start_time"`
-	mu         sync.RWMutex
+	mu             sync.RWMutex
 }
 
 // CacheEntry represents a cached item
@@ -87,9 +73,6 @@ func NewMultiLayerCache(config CacheConfig) (*MultiLayerCache, error) {
 	if config.L2TTL == 0 {
 		config.L2TTL = 24 * time.Hour
 	}
-	if config.L3TTL == 0 {
-		config.L3TTL = 7 * 24 * time.Hour
-	}
 	if config.L2Path == "" {
 		config.L2Path = "./cache"
 	}
@@ -111,21 +94,124 @@ func NewMultiLayerCache(config CacheConfig) (*MultiLayerCache, error) {
 		return nil, fmt.Errorf("failed to initialize disk cache: %w", err)
 	}
 
-	// Initialize L3 cache (remote) if configured
-	if config.L3Config != nil {
-		cache.l3, err = NewRemoteCache(*config.L3Config, config.L3TTL)
-		if err != nil {
-			// Log warning but don't fail - L3 is optional
-			fmt.Printf("Warning: failed to initialize remote cache: %v\n", err)
-		}
-	}
-
 	// Initialize predictor if enabled
 	if config.EnablePredict {
 		cache.predictor = NewCachePredictor()
 	}
 
 	return cache, nil
+}
+
+// CachePriority defines priority and TTL for cache entries
+type CachePriority struct {
+	TTL      time.Duration
+	Priority int  // 1-3, higher is more important
+	Volatile bool // True for frequently changing data
+}
+
+// GetEntry retrieves an entry from the cache (for use with CacheEntry type)
+func (m *MultiLayerCache) GetEntry(key string) *CacheEntry {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	// Try L1 first
+	if data, found := m.l1.Get(key); found {
+		m.stats.recordL1Hit()
+		return &CacheEntry{
+			Key:  key,
+			Data: data,
+		}
+	}
+	m.stats.recordL1Miss()
+
+	// Try L2
+	if data, found := m.l2.Get(key); found {
+		m.stats.recordL2Hit()
+		// Promote to L1
+		m.l1.Set(key, data, m.config.L1TTL)
+		return &CacheEntry{
+			Key:  key,
+			Data: data,
+		}
+	}
+	m.stats.recordL2Miss()
+
+	return nil
+}
+
+// Put stores an entry in the cache with priority
+func (m *MultiLayerCache) Put(key string, data interface{}, priority CachePriority) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Store in L1 if high priority or volatile
+	if priority.Priority >= 2 || priority.Volatile {
+		if err := m.l1.Set(key, data, priority.TTL); err != nil {
+			return err
+		}
+	}
+
+	// Always store in L2 for persistence
+	if priority.Priority >= 1 {
+		if err := m.l2.Set(key, data, m.config.L2TTL); err != nil {
+			// Log but don't fail
+			fmt.Printf("Warning: L2 cache set failed: %v\n", err)
+		}
+	}
+
+	// Predictive caching for related items
+	if m.predictor != nil && priority.Priority >= 2 {
+		m.predictor.RecordAccess(key)
+	}
+
+	return nil
+}
+
+// Stats recording methods
+func (s *CacheStats) recordL1Hit() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.L1Hits++
+	s.updateRates()
+}
+
+func (s *CacheStats) recordL1Miss() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.L1Misses++
+	s.updateRates()
+}
+
+func (s *CacheStats) recordL2Hit() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.L2Hits++
+	s.updateRates()
+}
+
+func (s *CacheStats) recordL2Miss() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.L2Misses++
+	s.updateRates()
+}
+
+func (s *CacheStats) updateRates() {
+	totalL1 := s.L1Hits + s.L1Misses
+	if totalL1 > 0 {
+		s.L1HitRate = float64(s.L1Hits) / float64(totalL1)
+	}
+
+	totalL2 := s.L2Hits + s.L2Misses
+	if totalL2 > 0 {
+		s.L2HitRate = float64(s.L2Hits) / float64(totalL2)
+	}
+
+	totalHits := s.L1Hits + s.L2Hits
+	totalRequests := totalL1 // Only count initial requests
+	if totalRequests > 0 {
+		s.OverallHitRate = float64(totalHits) / float64(totalRequests)
+	}
 }
 
 // Get retrieves an item from the cache, checking L1 -> L2 -> L3
@@ -154,18 +240,6 @@ func (c *MultiLayerCache) Get(key string) (interface{}, bool) {
 	}
 	c.recordMiss(2)
 
-	// Try L3 (remote cache) if available
-	if c.l3 != nil {
-		if data, found := c.l3.Get(key); found {
-			c.recordHit(3)
-			// Promote to L2 and L1
-			c.l2.Set(key, data, c.config.L2TTL)
-			c.l1.Set(key, data, c.config.L1TTL)
-			return data, true
-		}
-		c.recordMiss(3)
-	}
-
 	return nil, false
 }
 
@@ -183,14 +257,6 @@ func (c *MultiLayerCache) Set(key string, data interface{}, ttl time.Duration) e
 	if err := c.l2.Set(key, data, c.config.L2TTL); err != nil {
 		// Log warning but don't fail
 		fmt.Printf("Warning: L2 cache set failed: %v\n", err)
-	}
-
-	// Store in L3 (remote) if available
-	if c.l3 != nil {
-		if err := c.l3.Set(key, data, c.config.L3TTL); err != nil {
-			// Log warning but don't fail
-			fmt.Printf("Warning: L3 cache set failed: %v\n", err)
-		}
 	}
 
 	// Update prediction model
@@ -216,12 +282,6 @@ func (c *MultiLayerCache) Delete(key string) error {
 		errors = append(errors, fmt.Errorf("L2 delete failed: %w", err))
 	}
 
-	if c.l3 != nil {
-		if err := c.l3.Delete(key); err != nil {
-			errors = append(errors, fmt.Errorf("L3 delete failed: %w", err))
-		}
-	}
-
 	if len(errors) > 0 {
 		return fmt.Errorf("cache delete errors: %v", errors)
 	}
@@ -242,12 +302,6 @@ func (c *MultiLayerCache) Clear() error {
 
 	if err := c.l2.Clear(); err != nil {
 		errors = append(errors, fmt.Errorf("L2 clear failed: %w", err))
-	}
-
-	if c.l3 != nil {
-		if err := c.l3.Clear(); err != nil {
-			errors = append(errors, fmt.Errorf("L3 clear failed: %w", err))
-		}
 	}
 
 	// Reset stats
@@ -288,35 +342,10 @@ func (c *MultiLayerCache) GetPredictedTargets() []PrefetchTarget {
 }
 
 // GetStats returns cache performance statistics
-func (c *MultiLayerCache) GetStats() CacheStats {
+func (c *MultiLayerCache) GetStats() *CacheStats {
 	c.stats.mu.RLock()
 	defer c.stats.mu.RUnlock()
-
-	stats := *c.stats
-
-	// Calculate hit rates
-	l1Total := stats.L1Hits + stats.L1Misses
-	if l1Total > 0 {
-		stats.L1HitRate = float64(stats.L1Hits) / float64(l1Total)
-	}
-
-	l2Total := stats.L2Hits + stats.L2Misses
-	if l2Total > 0 {
-		stats.L2HitRate = float64(stats.L2Hits) / float64(l2Total)
-	}
-
-	l3Total := stats.L3Hits + stats.L3Misses
-	if l3Total > 0 {
-		stats.L3HitRate = float64(stats.L3Hits) / float64(l3Total)
-	}
-
-	overallHits := stats.L1Hits + stats.L2Hits + stats.L3Hits
-	overallTotal := l1Total + l2Total + l3Total
-	if overallTotal > 0 {
-		stats.OverallHitRate = float64(overallHits) / float64(overallTotal)
-	}
-
-	return stats
+	return c.stats
 }
 
 // Optimize performs cache optimization operations
@@ -331,12 +360,6 @@ func (c *MultiLayerCache) Optimize() error {
 
 	if err := c.l2.Clean(); err != nil {
 		fmt.Printf("Warning: L2 cleanup failed: %v\n", err)
-	}
-
-	if c.l3 != nil {
-		if err := c.l3.Clean(); err != nil {
-			fmt.Printf("Warning: L3 cleanup failed: %v\n", err)
-		}
 	}
 
 	// Run prediction model optimization
@@ -358,8 +381,6 @@ func (c *MultiLayerCache) recordHit(layer int) {
 		c.stats.L1Hits++
 	case 2:
 		c.stats.L2Hits++
-	case 3:
-		c.stats.L3Hits++
 	}
 }
 
@@ -372,8 +393,6 @@ func (c *MultiLayerCache) recordMiss(layer int) {
 		c.stats.L1Misses++
 	case 2:
 		c.stats.L2Misses++
-	case 3:
-		c.stats.L3Misses++
 	}
 }
 
@@ -581,43 +600,4 @@ func (d *DiskCache) writeFile(filePath string, entry CacheEntry) error {
 func (d *DiskCache) updateAccessTime(filePath string) {
 	now := time.Now()
 	os.Chtimes(filePath, now, now)
-}
-
-// RemoteCache implements network-based caching (placeholder)
-type RemoteCache struct {
-	config RemoteConfig
-	ttl    time.Duration
-}
-
-func NewRemoteCache(config RemoteConfig, ttl time.Duration) (*RemoteCache, error) {
-	// This is a placeholder - would implement actual remote cache (S3, Redis, etc.)
-	return &RemoteCache{
-		config: config,
-		ttl:    ttl,
-	}, nil
-}
-
-func (r *RemoteCache) Get(key string) (interface{}, bool) {
-	// Placeholder implementation
-	return nil, false
-}
-
-func (r *RemoteCache) Set(key string, data interface{}, ttl time.Duration) error {
-	// Placeholder implementation
-	return nil
-}
-
-func (r *RemoteCache) Delete(key string) error {
-	// Placeholder implementation
-	return nil
-}
-
-func (r *RemoteCache) Clear() error {
-	// Placeholder implementation
-	return nil
-}
-
-func (r *RemoteCache) Clean() error {
-	// Placeholder implementation
-	return nil
 }

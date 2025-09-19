@@ -16,6 +16,7 @@ import (
 	"github.com/guarzo/pkmgradegap/internal/model"
 	"github.com/guarzo/pkmgradegap/internal/prices"
 	"github.com/guarzo/pkmgradegap/internal/report"
+	"github.com/guarzo/pkmgradegap/internal/testutil"
 )
 
 // MockCardProvider implements a test card provider
@@ -446,7 +447,7 @@ func TestCacheIntegration(t *testing.T) {
 	}
 
 	cardProvider := cards.NewPokeTCGIO("", testCache)
-	_ = prices.NewPriceCharting("test-token", testCache) // Test creation only
+	_ = prices.NewPriceCharting(testutil.GetTestPriceChartingToken(), testCache) // Test creation only
 
 	// Test cache with card provider
 	t.Run("card_provider_cache", func(t *testing.T) {
@@ -472,7 +473,7 @@ func TestCacheIntegration(t *testing.T) {
 
 	// Test cache with price provider
 	t.Run("price_provider_cache", func(t *testing.T) {
-		testPriceProvider := prices.NewPriceCharting("test-token", testCache)
+		testPriceProvider := prices.NewPriceCharting(testutil.GetTestPriceChartingToken(), testCache)
 
 		if !testPriceProvider.Available() {
 			t.Skip("price provider not available without token")

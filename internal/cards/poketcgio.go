@@ -25,7 +25,7 @@ func NewPokeTCGIO(apiKey string, c *cache.Cache) *PokeTCGIO {
 		apiKey: apiKey,
 		cache:  c,
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }

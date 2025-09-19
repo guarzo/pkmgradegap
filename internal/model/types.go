@@ -55,19 +55,3 @@ type PSAPopulation struct {
 	PSA8        int
 	LastUpdated time.Time
 }
-
-type SalesData struct {
-	CardName        string
-	SetName         string
-	CardNumber      string
-	LastUpdated     time.Time
-	SalesCount      int       // Total number of sales
-	AvgSalePrice    float64   // Average sale price (raw/ungraded)
-	MedianSalePrice float64   // Median sale price
-	PSA10Sales      int       // Number of PSA 10 sales
-	PSA10AvgPrice   float64   // Average PSA 10 sale price
-	PSA9Sales       int       // Number of PSA 9 sales
-	PSA9AvgPrice    float64   // Average PSA 9 sale price
-	RecentSales     []float64 // Recent sale prices (last 30 days)
-	DataSource      string    // Where the data came from
-}

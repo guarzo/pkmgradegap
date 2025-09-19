@@ -15,7 +15,6 @@ const (
 	AlertPriceDrop       AlertType = "PRICE_DROP"
 	AlertPriceIncrease   AlertType = "PRICE_INCREASE"
 	AlertNewOpportunity  AlertType = "NEW_OPPORTUNITY"
-	AlertPopulationSpike AlertType = "POPULATION_SPIKE"
 	AlertVolatilitySpike AlertType = "VOLATILITY_SPIKE"
 	AlertVolatilityLow   AlertType = "VOLATILITY_LOW"
 )
@@ -33,13 +32,12 @@ type Alert struct {
 
 // AlertConfig contains alert generation parameters
 type AlertConfig struct {
-	PriceDropThresholdPct       float64 // Trigger alert if price drops by this %
-	PriceDropThresholdUSD       float64 // Trigger alert if price drops by this $
-	OpportunityThresholdROI     float64 // Min ROI to trigger opportunity alert
-	PopulationIncreaseThreshold float64 // % increase in population to trigger alert
-	VolatilityHighThreshold     float64 // Trigger high volatility alert above this %
-	VolatilityLowThreshold      float64 // Trigger low volatility alert below this %
-	MinSeverity                 string  // Only show alerts at or above this severity ("HIGH", "MEDIUM", "LOW")
+	PriceDropThresholdPct   float64 // Trigger alert if price drops by this %
+	PriceDropThresholdUSD   float64 // Trigger alert if price drops by this $
+	OpportunityThresholdROI float64 // Min ROI to trigger opportunity alert
+	VolatilityHighThreshold float64 // Trigger high volatility alert above this %
+	VolatilityLowThreshold  float64 // Trigger low volatility alert below this %
+	MinSeverity             string  // Only show alerts at or above this severity ("HIGH", "MEDIUM", "LOW")
 }
 
 // AlertEngine processes snapshots and generates alerts
@@ -223,14 +221,6 @@ func (ae *AlertEngine) CheckVolatilityAlerts(old, new *Snapshot) []Alert {
 		}
 	}
 
-	return ae.filterBySeverity(alerts)
-}
-
-// CheckPopulationAlerts identifies significant population changes
-// Note: Population tracking will be implemented when population data is added to snapshots
-func (ae *AlertEngine) CheckPopulationAlerts(old, new *Snapshot) []Alert {
-	var alerts []Alert
-	// TODO: Implement when SnapshotCardData includes population fields
 	return ae.filterBySeverity(alerts)
 }
 

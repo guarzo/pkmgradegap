@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/guarzo/pkmgradegap/internal/fusion"
+	// "github.com/guarzo/pkmgradegap/internal/fusion" // TODO: Update when fusion package is refactored
 	"github.com/guarzo/pkmgradegap/internal/model"
 )
 
@@ -17,16 +17,12 @@ func ExampleIntegration() {
 	config.RateLimitPerMin = 6 // 6 requests per minute to be respectful
 	config.RequestDelay = 10   // 10 seconds between requests
 
-	// For development/testing, use mock provider
-	var provider Provider
-	if config.CacheEnabled {
-		provider = NewGameStopClient(config)
-	} else {
-		provider = NewMockProvider()
-	}
+	// Create GameStop web scraper client
+	provider := NewGameStopClient(config)
 
 	// Initialize fusion engine
-	fusionEngine := fusion.NewFusionEngine()
+	// fusionEngine := fusion.NewFusionEngine() // TODO: Update when fusion package is refactored
+	var fusionEngine interface{} // placeholder
 
 	// Example card to analyze
 	card := model.Card{
@@ -47,19 +43,22 @@ func ExampleIntegration() {
 
 	// Example: Combine with other price sources (PriceCharting, sales data, etc.)
 	// This would normally come from your existing price providers
-	otherPrices := make(map[string][]fusion.PriceData)
+	// otherPrices := make(map[string][]fusion.PriceData) // TODO: Update when fusion package is refactored
+	otherPrices := make(map[string][]interface{})
 
 	// Merge and fuse prices
 	fusedPrices := MergeWithFusionEngine(fusionEngine, listingData, otherPrices)
 
 	// Display results
+	// TODO: Update when fusion package is refactored
 	for grade, fusedPrice := range fusedPrices {
-		fmt.Printf("%s: $%.2f (confidence: %.2f)\n",
-			grade, fusedPrice.Value, fusedPrice.Confidence)
-
-		if len(fusedPrice.Warnings) > 0 {
-			fmt.Printf("  Warnings: %v\n", fusedPrice.Warnings)
-		}
+		// fmt.Printf("%s: $%.2f (confidence: %.2f)\n",
+		// 	grade, fusedPrice.Value, fusedPrice.Confidence)
+		//
+		// if len(fusedPrice.Warnings) > 0 {
+		// 	fmt.Printf("  Warnings: %v\n", fusedPrice.Warnings)
+		// }
+		fmt.Printf("%s: %v\n", grade, fusedPrice)
 	}
 
 	// Get lowest prices by grade for quick comparison
@@ -71,14 +70,16 @@ func ExampleIntegration() {
 }
 
 // IntegrateWithExistingAnalysis shows how to add GameStop data to your existing analysis
+// TODO: Update when fusion package is refactored
 func IntegrateWithExistingAnalysis(
 	card model.Card,
-	existingPrices map[string][]fusion.PriceData,
-	fusionEngine *fusion.FusionEngine,
-) map[string]fusion.FusedPrice {
+	existingPrices map[string][]interface{}, // map[string][]fusion.PriceData,
+	fusionEngine interface{}, // *fusion.FusionEngine,
+) map[string]interface{} { // map[string]fusion.FusedPrice {
 
-	// Initialize GameStop provider (use mock for testing)
-	provider := NewMockProvider()
+	// Initialize GameStop web scraper
+	config := DefaultConfig()
+	provider := NewGameStopClient(config)
 
 	// Get GameStop data
 	listingData, err := provider.GetListings(card.SetName, card.Name, card.Number)
@@ -98,15 +99,18 @@ func IntegrateWithExistingAnalysis(
 	return MergeWithFusionEngine(fusionEngine, listingData, existingPrices)
 }
 
+// TODO: Update when fusion package is refactored
 func fusePricesWithoutGameStop(
-	prices map[string][]fusion.PriceData,
-	engine *fusion.FusionEngine,
-) map[string]fusion.FusedPrice {
-	result := make(map[string]fusion.FusedPrice)
+	prices map[string][]interface{}, // map[string][]fusion.PriceData,
+	engine interface{}, // *fusion.FusionEngine,
+) map[string]interface{} { // map[string]fusion.FusedPrice {
+	// result := make(map[string]fusion.FusedPrice)
+	result := make(map[string]interface{})
 
 	for grade, priceData := range prices {
 		if len(priceData) > 0 {
-			result[grade] = engine.FusePrice(priceData)
+			// result[grade] = engine.FusePrice(priceData)
+			result[grade] = priceData // TODO: Implement fusion logic
 		}
 	}
 
@@ -118,14 +122,9 @@ type CLIFlags struct {
 	WithGameStop     bool
 	GameStopMaxItems int
 	GameStopTimeout  int
-	GameStopMock     bool
 }
 
 func CreateGameStopProvider(flags CLIFlags) Provider {
-	if flags.GameStopMock {
-		return NewMockProvider()
-	}
-
 	config := DefaultConfig()
 	if flags.GameStopMaxItems > 0 {
 		config.MaxListingsPerCard = flags.GameStopMaxItems

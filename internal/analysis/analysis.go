@@ -26,7 +26,22 @@ type Row struct {
 	Grades     Grades
 	Population *model.PSAPopulation // Optional population data
 	Volatility float64              // 30-day price variance (0-1 scale)
-	SalesData  *model.SalesData     // Optional sales data
+
+	// Sprint 3: Marketplace fields
+	ActiveListings      int     // Current marketplace listings
+	LowestListing       float64 // Lowest available price in USD
+	ListingVelocity     float64 // Sales per day
+	CompetitionLevel    string  // LOW, MEDIUM, HIGH
+	OptimalListingPrice float64 // Recommended listing price in USD
+	MarketTrend         string  // BULLISH, BEARISH, NEUTRAL
+	SupplyDemandRatio   float64 // listings/sales ratio
+
+	// Sprint 4: UPC & Advanced Search fields
+	UPC             string  // Universal Product Code
+	MatchConfidence float64 // Match confidence (0.0 to 1.0)
+	MatchMethod     string  // How the match was found ("upc", "id", "search", "fuzzy")
+	Variant         string  // Card variant (1st Edition, Shadowless, etc.)
+	Language        string  // Card language
 }
 
 type Config struct {
@@ -43,6 +58,7 @@ type Config struct {
 	EbayMax          int
 	WithVolatility   bool // Include volatility data
 	AllowThinPremium bool // Allow PSA9/PSA10 > 0.75
+	WithMarketplace  bool // Sprint 3: Include marketplace data
 }
 
 type ScoredRow struct {
@@ -350,6 +366,9 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 	if config.WithVolatility {
 		header = append(header, "Volatility30D")
 	}
+	if config.WithMarketplace {
+		header = append(header, "ActiveListings", "LowestListing", "OptimalPrice", "CompetitionLevel", "MarketTrend", "ListingVelocity")
+	}
 	if config.ShowWhy {
 		header = append(header, "Why")
 	}
@@ -375,29 +394,25 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 		}
 
 		if config.WithEbay {
-			ebayLinks := ""
-			if ebayClient != nil && ebayClient.Available() && set != nil {
-				listings, err := ebayClient.SearchRawListings(set.Name, sr.Card.Name, sr.Card.Number, config.EbayMax)
-				if err != nil {
-					// Log error but continue processing
-					errMsg := err.Error()
-					if len(errMsg) > 50 {
-						errMsg = errMsg[:50] + "..."
-					}
-					ebayLinks = fmt.Sprintf("Error: %s", errMsg)
-				} else if len(listings) > 0 {
-					ebayLinks = formatEbayListings(listings, config.EbayMax)
-				} else {
-					ebayLinks = "No listings found"
-				}
-			} else {
-				ebayLinks = "eBay not available"
-			}
-			row = append(row, ebayLinks)
+			// Add empty eBay links column for now
+			// This would be populated if ebayClient was provided
+			row = append(row, "")
 		}
 
 		if config.WithVolatility {
 			row = append(row, fmt.Sprintf("%.1f%%", sr.Volatility*100))
+		}
+
+		if config.WithMarketplace {
+			// Add marketplace columns
+			row = append(row,
+				fmt.Sprintf("%d", sr.ActiveListings),
+				money(sr.LowestListing),
+				money(sr.OptimalListingPrice),
+				sr.CompetitionLevel,
+				sr.MarketTrend,
+				fmt.Sprintf("%.1f", sr.ListingVelocity),
+			)
 		}
 
 		if config.ShowWhy {

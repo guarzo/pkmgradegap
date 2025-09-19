@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+        cache: true
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Set up test environment
+      run: |
+        if [ -f "./scripts/setup_test_env.sh" ]; then
+          ./scripts/setup_test_env.sh github
+        fi
+
+    - name: Run tests with coverage
+      run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      env:
+        TEST_MODE: "true"
+        GAMESTOP_MOCK: "true"
+        SALES_MOCK: "true"
+        POPULATION_MOCK: "true"
+
+    - name: Run linter
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=3m
+
+    - name: Build binary
+      run: go build -o pkmgradegap ./cmd/pkmgradegap
+
+    - name: Verify build
+      run: ./pkmgradegap --help
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.out

@@ -46,4 +46,4 @@ debug
 tmp/
 
 # Config files
-.claude
+.claude.env
