@@ -62,7 +62,9 @@
       "Bash(make:*)",
       "Bash(/usr/bin/make:*)",
       "Bash(python3:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(y)",
+      "Bash(TEST_MODE=true PRICECHARTING_TOKEN=\"test\" ./pkmgradegap --set \"Surging Sparks\" --top 3 --with-auctions)"
     ],
     "deny": [],
     "ask": []

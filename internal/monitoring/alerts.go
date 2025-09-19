@@ -12,11 +12,12 @@ import (
 type AlertType string
 
 const (
-	AlertPriceDrop       AlertType = "PRICE_DROP"
-	AlertPriceIncrease   AlertType = "PRICE_INCREASE"
-	AlertNewOpportunity  AlertType = "NEW_OPPORTUNITY"
-	AlertVolatilitySpike AlertType = "VOLATILITY_SPIKE"
-	AlertVolatilityLow   AlertType = "VOLATILITY_LOW"
+	AlertPriceDrop          AlertType = "PRICE_DROP"
+	AlertPriceIncrease      AlertType = "PRICE_INCREASE"
+	AlertNewOpportunity     AlertType = "NEW_OPPORTUNITY"
+	AlertVolatilitySpike    AlertType = "VOLATILITY_SPIKE"
+	AlertVolatilityLow      AlertType = "VOLATILITY_LOW"
+	AlertAuctionOpportunity AlertType = "AUCTION_OPPORTUNITY"
 )
 
 // Alert represents a significant market event

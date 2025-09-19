@@ -42,6 +42,13 @@ type Row struct {
 	MatchMethod     string  // How the match was found ("upc", "id", "search", "fuzzy")
 	Variant         string  // Card variant (1st Edition, Shadowless, etc.)
 	Language        string  // Card language
+
+	// Sprint 1: Auction fields
+	AuctionOpportunities int     // Number of ending auctions found
+	BestAuctionBid      float64 // Current bid of most profitable auction
+	BestAuctionProfit   float64 // Estimated profit of best auction
+	BestAuctionURL      string  // URL to best auction opportunity
+	BestAuctionRisk     string  // Risk level of best auction (LOW/MEDIUM/HIGH)
 }
 
 type Config struct {
@@ -56,6 +63,7 @@ type Config struct {
 	ShowWhy          bool
 	WithEbay         bool
 	EbayMax          int
+	WithAuctions     bool // Sprint 1: Include auction opportunities
 	WithVolatility   bool // Include volatility data
 	AllowThinPremium bool // Allow PSA9/PSA10 > 0.75
 	WithMarketplace  bool // Sprint 3: Include marketplace data
@@ -193,6 +201,22 @@ func truncateTitle(title string, maxLen int) string {
 type EbayProvider interface {
 	Available() bool
 	SearchRawListings(setName, cardName, number string, max int) ([]EbayListing, error)
+}
+
+// AuctionProvider interface for auction analysis
+type AuctionProvider interface {
+	Available() bool
+	GetAuctionOpportunities(setName, cardName, number string) ([]AuctionOpportunity, error)
+}
+
+// AuctionOpportunity represents an auction opportunity for the analysis package
+type AuctionOpportunity struct {
+	CurrentBid     float64
+	EstimatedValue float64
+	ProfitScore    float64
+	Risk           string
+	URL            string
+	TimeRemaining  string
 }
 
 // EbayListing represents an eBay listing with necessary fields for analysis
@@ -363,6 +387,9 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 	if config.WithEbay {
 		header = append(header, "EBayLinks")
 	}
+	if config.WithAuctions {
+		header = append(header, "AuctionCount", "BestBid", "AuctionProfit%", "AuctionRisk", "AuctionURL")
+	}
 	if config.WithVolatility {
 		header = append(header, "Volatility30D")
 	}
@@ -397,6 +424,24 @@ func ReportRankWithEbay(rows []Row, set *model.Set, config Config, ebayClient Eb
 			// Add empty eBay links column for now
 			// This would be populated if ebayClient was provided
 			row = append(row, "")
+		}
+
+		if config.WithAuctions {
+			// Add auction data columns
+			auctionCount := fmt.Sprintf("%d", sr.AuctionOpportunities)
+			bestBid := ""
+			auctionProfit := ""
+			auctionRisk := ""
+			auctionURL := ""
+
+			if sr.BestAuctionBid > 0 {
+				bestBid = money(sr.BestAuctionBid)
+				auctionProfit = fmt.Sprintf("%.1f%%", sr.BestAuctionProfit)
+				auctionRisk = sr.BestAuctionRisk
+				auctionURL = sr.BestAuctionURL
+			}
+
+			row = append(row, auctionCount, bestBid, auctionProfit, auctionRisk, auctionURL)
 		}
 
 		if config.WithVolatility {
